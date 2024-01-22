@@ -19,6 +19,7 @@ import javax.servlet.http.HttpServletRequest;
 @RestController
 @RequestMapping("/cce")
 public class CCEController {
+//    稳定最新版测试
     @PostMapping("/updateOld/cutFlow")
     public BaseResponse cutOldFlow(HttpServletRequest request) {
         Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
@@ -29,7 +30,7 @@ public class CCEController {
         // todo 修改configMap，切断稳定版本流量
         return ResultUtils.success(null);
     }
-
+//    稳定最新版发布
     @PostMapping("/updateOld/resumeFlow")
     public BaseResponse resumeOldFlow(HttpServletRequest request) {
         Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
@@ -41,6 +42,7 @@ public class CCEController {
         return ResultUtils.success(null);
     }
 
+//    灰度版本测试
     @PostMapping("/updateNew/cutFlow")
     public BaseResponse cutNewFlow(HttpServletRequest request) {
         Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
@@ -52,7 +54,7 @@ public class CCEController {
         return ResultUtils.success(null);
     }
 
-
+//灰度版本发布
     @PostMapping("/updateNew/resumeFlow")
     public BaseResponse resumeNewFlow(HttpServletRequest request) {
         Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
