@@ -7,7 +7,11 @@ import com.iscas.autoCanary.contant.UserConstant;
 import com.iscas.autoCanary.exception.BusinessException;
 import com.iscas.autoCanary.model.domain.User;
 import com.iscas.autoCanary.model.domain.request.UserRegisterRequest;
+import com.iscas.autoCanary.service.CCEService;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -19,48 +23,56 @@ import javax.servlet.http.HttpServletRequest;
 @RestController
 @RequestMapping("/cce")
 public class CCEController {
-    @PostMapping("/updateOld/cutFlow")
-    public BaseResponse cutOldFlow(HttpServletRequest request) {
+
+    @Autowired
+    public CCEService cceService;
+
+    @PostMapping("/stable/cutFlow")
+    public BaseResponse cutStableFlow(HttpServletRequest request) {
         Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
         User currentUser = (User) userObj;
         if (currentUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
         // todo 修改configMap，切断稳定版本流量
+        cceService.cutStableFlow();
         return ResultUtils.success(null);
     }
 
-    @PostMapping("/updateOld/resumeFlow")
-    public BaseResponse resumeOldFlow(HttpServletRequest request) {
+    @PostMapping("/stable/resumeFlow")
+    public BaseResponse resumeStableFlow(HttpServletRequest request) {
         Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
         User currentUser = (User) userObj;
         if (currentUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
         // todo 修改configMap，恢复稳定版本流量
+        cceService.resumeStableFlow();
         return ResultUtils.success(null);
     }
 
-    @PostMapping("/updateNew/cutFlow")
-    public BaseResponse cutNewFlow(HttpServletRequest request) {
+    @PostMapping("/canary/cutFlow")
+    public BaseResponse cutCanaryFlow(HttpServletRequest request) {
         Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
         User currentUser = (User) userObj;
         if (currentUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
         // todo 修改configMap，切断灰度版本流量
+        cceService.cutCanaryFlow();
         return ResultUtils.success(null);
     }
 
 
-    @PostMapping("/updateNew/resumeFlow")
-    public BaseResponse resumeNewFlow(HttpServletRequest request) {
+    @PostMapping("/canary/resumeFlow")
+    public BaseResponse resumeCanaryFlow(HttpServletRequest request) {
         Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
         User currentUser = (User) userObj;
         if (currentUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
         // todo 修改configMap，恢复灰度版本流量
+        cceService.resumeCanaryFlow();
         return ResultUtils.success(null);
     }
 }
