@@ -1,15 +1,12 @@
-# 公共配置文件
-# @author <a href=#">一只小小丑</a>
-# @from 中科院软件所
 spring:
   application:
-    name: user-center-backend
+    name: auto-canary
   # DataSource Config
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/yupi
-    username: root
-    password: liyifan81349219
+    url: jdbc:mysql://localhost:3306/auto_canary
+    username: {your_user}   #example:root
+    password: {your_password}   #example:123456
   # session 失效时间
   session:
     timeout: 86400
