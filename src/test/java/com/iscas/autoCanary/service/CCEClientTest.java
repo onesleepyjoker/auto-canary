@@ -27,34 +27,26 @@ import java.util.Optional;
  */
 @SpringBootTest
 public class CCEClientTest {
+    //ingress名称常量
+    final String NAMESPACE="default";
+    final String STABLE_INGRESS_NAME="project";
+    final String CANARY_INGRESS_NAME="new-project";
+    //灰度发布相关常量
+    final String HEADER="canary";
+    final String CANARY_HEADER_TEST_PATTERN="^tester$";
+    final String CANARY_HEADER_NORMAL_PATTERN="^(new|tester)$";
+    final String STABLE_HEADER_VALUE="tester";
 
-    @Test
-    public void getIngress() {
-        try {
-            // 创建 Networking API 实例
-            NetworkingV1Api networkingV1Api = new NetworkingV1Api();
-
-            // 查看 Ingress
-            String namespace = "default";
-            String ingressName = "project";
-            V1Ingress ingress = networkingV1Api.readNamespacedIngress(ingressName, namespace, null);
-            System.out.println("Ingress before update: " + ingress);
-        } catch (ApiException e) {
-            System.err.println("Kubernetes API exception: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-
-    @Test
-    public void getIngressAnnotations() throws ApiException {
-        //创建network API实例
+    /**
+     * 获取ingress的注解
+     * @param namespace
+     * @param ingressName
+     * @return nonNullable
+     */
+    protected Map<String,String> getAnnotations(String namespace,String ingressName) throws ApiException {
+        // 创建 Networking API 实例
         NetworkingV1Api networkingV1Api = new NetworkingV1Api();
-
-        String namespace = "default";
-        String stableIngressName = "project";
-        String canaryIngressName="new-project";
-        V1Ingress stableIngress = networkingV1Api.readNamespacedIngress(stableIngressName, namespace, null);
+        V1Ingress stableIngress = networkingV1Api.readNamespacedIngress(ingressName, namespace, null);
         // 读取 Annotations
         V1ObjectMeta stableMetadata = Optional.ofNullable(stableIngress)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NO_INGRESS))
@@ -62,102 +54,166 @@ public class CCEClientTest {
         Map<String, String> stableAnnotations = Optional.ofNullable(stableMetadata)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INGRESS_CONFIG_ERROR))
                 .getAnnotations();
-        //打印annotations
-        Optional.ofNullable(stableAnnotations)
+        //返回annotations，annotations==null, throw Exception
+        return Optional.ofNullable(stableAnnotations)
+                .orElseThrow(()->new BusinessException(ErrorCode.INGRESS_CONFIG_ERROR));
+    }
+
+    /**
+     * 更新ingress的注解
+     * @param namespace
+     * @param ingressName
+     * @param annotations
+     * @throws ApiException
+     */
+    protected void updateAnnotations(String namespace,String ingressName,Map<String,String> annotations) throws ApiException{
+        // 创建 Networking API 实例
+        NetworkingV1Api networkingV1Api = new NetworkingV1Api();
+        V1Ingress ingress = networkingV1Api.readNamespacedIngress(ingressName, namespace, null);
+        V1ObjectMeta metadata = Optional.ofNullable(ingress)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NO_INGRESS))
+                .getMetadata();
+        Optional.ofNullable(metadata)
                 .orElseThrow(()->new BusinessException(ErrorCode.INGRESS_CONFIG_ERROR))
-                .forEach((k,v)->System.out.println("key:"+k+",value:"+v));
-
+                .setAnnotations(annotations);
+        networkingV1Api.replaceNamespacedIngress(ingressName,namespace,ingress,null,null,null,null);
     }
 
+
+    /**
+     * 获取ingess
+     */
     @Test
-    public void testCutCanaryIngress() throws IOException, ApiException {
-        // 加载 kubeconfig
-        String kubeConfigPath = "src/main/resources/static/canary-test-kubeconfig.yaml";
-        ApiClient client = ClientBuilder.kubeconfig(KubeConfig.loadKubeConfig(new FileReader(kubeConfigPath))).build();
-        Configuration.setDefaultApiClient(client);
+    public void getIngress() {
+        try {
+            // 创建 Networking API 实例
+            NetworkingV1Api networkingV1Api = new NetworkingV1Api();
 
-        // 创建 Networking API 实例
-        NetworkingV1Api networkingV1Api = new NetworkingV1Api();
+            // 查看 Ingress
+            V1Ingress canaryIngress = networkingV1Api.readNamespacedIngress(CANARY_INGRESS_NAME, NAMESPACE, null);
+            V1Ingress stableIngress = networkingV1Api.readNamespacedIngress(STABLE_INGRESS_NAME, NAMESPACE, null);
 
-        // 读取 Ingress
-        String namespace = "default";
-        String ingressName = "new-project";
-        V1Ingress ingress = networkingV1Api.readNamespacedIngress(ingressName, namespace, null);
-        if (ingress == null) {
-            //todo 读取失败，返回无法找到该ingress资源
-            System.out.println("读取失败，无法找到该ingress资源");
+            //print
+            System.out.println("canary ingress info:: " + canaryIngress);
+            System.out.println("stable ingress info:: " + canaryIngress);
+        } catch (ApiException e) {
+            System.err.println("Kubernetes API exception: " + e.getMessage());
+            e.printStackTrace();
         }
-        // 读取 Annotations
-        V1ObjectMeta metadata = ingress.getMetadata();
-        if (metadata == null) {
-            //todo 读取metadata失败，请修改配置文件
-            System.out.println("读取metadata失败，请修改配置文件");
-        }
-        // 移除旧的注解
-        Map<String, String> annotations = metadata.getAnnotations();
-        if (annotations == null) {
-            //todo 读取ingress配置文件失败，请修改配置文件
-            System.out.println("读取annotations失败，请修改配置文件");
-        }
-
-        // 移除旧的注解
-        if (annotations.get("nginx.ingress.kubernetes.io/canary-by-header-pattern") != null) {
-            annotations.remove("nginx.ingress.kubernetes.io/canary-by-header-pattern");
-        }
-        // 更新注解
-        annotations.put("nginx.ingress.kubernetes.io/canary-by-header-value", "tester");
-
-
-        // 设置更新后的注解
-        ingress.getMetadata().setAnnotations(annotations);
-        // 更新 Ingress
-        networkingV1Api.replaceNamespacedIngress(ingressName, namespace, ingress, null, null, null, null);
-        System.out.println("Ingress annotations updated successfully");
     }
 
+    /**
+     * 打印两个ingress的注解
+     * @throws ApiException
+     */
     @Test
-    public void testResumeIngress() throws IOException, ApiException {
-        // 加载 kubeconfig
-        String kubeConfigPath = "src/main/resources/static/canary-test-kubeconfig.yaml";
-        ApiClient client = ClientBuilder.kubeconfig(KubeConfig.loadKubeConfig(new FileReader(kubeConfigPath))).build();
-        Configuration.setDefaultApiClient(client);
+    public void printGetAnnotations() throws ApiException {
+        Map<String, String> stableAnnotatinos = getAnnotations(NAMESPACE, STABLE_INGRESS_NAME);
+        Map<String, String> canaryAnnotations = getAnnotations(NAMESPACE, CANARY_INGRESS_NAME);
 
-        // 创建 Networking API 实例
-        NetworkingV1Api networkingV1Api = new NetworkingV1Api();
-
-        // 读取 Ingress
-        String namespace = "default";
-        String ingressName = "new-project";
-        V1Ingress ingress = networkingV1Api.readNamespacedIngress(ingressName, namespace, null);
-        if (ingress == null) {
-            //todo 读取失败，返回无法找到该ingress资源
-            System.out.println("读取失败，无法找到该ingress资源");
-        }
-        // 读取 Annotations
-        V1ObjectMeta metadata = ingress.getMetadata();
-        if (metadata == null) {
-            //todo 读取metadata失败，请修改配置文件
-            System.out.println("读取metadata失败，请修改配置文件");
-        }
-        // 移除旧的注解
-        Map<String, String> annotations = metadata.getAnnotations();
-        if (annotations == null) {
-            //todo 读取ingress配置文件失败，请修改配置文件
-            System.out.println("读取metadata失败，请修改配置文件");
-        }
-
-        // 移除旧的注解
-        if (annotations.get("nginx.ingress.kubernetes.io/canary-by-header-value") != null) {
-            annotations.remove("nginx.ingress.kubernetes.io/canary-by-header-value");
-        }
-        // 更新注解
-        annotations.put("nginx.ingress.kubernetes.io/canary-by-header-pattern", "^(new|tester)$");
-
-
-        // 设置更新后的注解
-        ingress.getMetadata().setAnnotations(annotations);
-        // 更新 Ingress
-        networkingV1Api.replaceNamespacedIngress(ingressName, namespace, ingress, null, null, null, null);
-        System.out.println("Ingress annotations updated successfully");
+        System.out.println("stable-annotations:");
+        stableAnnotatinos.forEach((k,v)-> System.out.println(k+":"+v));
+        System.out.println("canary-annotations:");
+        canaryAnnotations.forEach((k,v)-> System.out.println(k+":"+v));
     }
+
+
+    /**
+     * 用于稳定版开始测试按钮
+     */
+    @Test
+    public void cutStableFlow() throws ApiException {
+        Map<String, String> canaryAnnotations = getAnnotations(NAMESPACE, CANARY_INGRESS_NAME);
+        Map<String, String> stableAnnotations = getAnnotations(NAMESPACE, STABLE_INGRESS_NAME);
+
+        //切断内侧用户流量
+        canaryAnnotations.put("nginx.ingress.kubernetes.io/canary","false");
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary","true");
+        // 保证状态为目标状态
+        canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
+        canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-pattern",CANARY_HEADER_NORMAL_PATTERN);
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-value",STABLE_HEADER_VALUE);
+
+        // 更新注解
+        updateAnnotations(NAMESPACE,CANARY_INGRESS_NAME,canaryAnnotations);
+        updateAnnotations(NAMESPACE,STABLE_INGRESS_NAME,stableAnnotations);
+
+        System.out.println("update success");
+    }
+
+    /**
+     * 用于稳定版正式发布按钮
+     */
+    @Test
+    public void resumeStableFlow() throws ApiException {
+        Map<String, String> canaryAnnotations = getAnnotations(NAMESPACE, CANARY_INGRESS_NAME);
+        Map<String, String> stableAnnotations = getAnnotations(NAMESPACE, STABLE_INGRESS_NAME);
+
+        //切断内侧用户流量
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary","false");
+        canaryAnnotations.put("nginx.ingress.kubernetes.io/canary","true");
+        // 保证状态为目标状态
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
+        canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-value",STABLE_HEADER_VALUE);
+        canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-pattern",CANARY_HEADER_NORMAL_PATTERN);
+
+        // 更新注解
+        updateAnnotations(NAMESPACE,STABLE_INGRESS_NAME,stableAnnotations);
+        updateAnnotations(NAMESPACE,CANARY_INGRESS_NAME,canaryAnnotations);
+
+        System.out.println("update success");
+    }
+
+    /**
+     * 用于灰度版开始测试按钮
+     * @throws ApiException
+     */
+    @Test
+    public void cutCanaryFlow() throws ApiException {
+        Map<String, String> canaryAnnotations = getAnnotations(NAMESPACE, CANARY_INGRESS_NAME);
+        Map<String, String> stableAnnotations = getAnnotations(NAMESPACE, STABLE_INGRESS_NAME);
+
+        //切断内侧用户流量
+        canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-pattern",CANARY_HEADER_TEST_PATTERN);
+        // 保证状态为目标状态
+        canaryAnnotations.put("nginx.ingress.kubernetes.io/canary","true");
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary","false");
+        canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-value",STABLE_HEADER_VALUE);
+
+        // 更新注解
+        updateAnnotations(NAMESPACE,CANARY_INGRESS_NAME,canaryAnnotations);
+        updateAnnotations(NAMESPACE,STABLE_INGRESS_NAME,stableAnnotations);
+
+        System.out.println("update success");
+    }
+
+    /**
+     * 用于灰度版正式发布按钮
+     */
+    @Test
+    public void resumeCanaryFlow() throws ApiException {
+        Map<String, String> canaryAnnotations = getAnnotations(NAMESPACE, CANARY_INGRESS_NAME);
+        Map<String, String> stableAnnotations = getAnnotations(NAMESPACE, STABLE_INGRESS_NAME);
+
+        //恢复内侧用户流量
+        canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-pattern", CANARY_HEADER_NORMAL_PATTERN);
+        //保证状态为目标状态
+        canaryAnnotations.put("nginx.ingress.kubernetes.io/canary","true");
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary","false");
+        canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-value",STABLE_HEADER_VALUE);
+
+        // 更新注解
+        updateAnnotations(NAMESPACE,CANARY_INGRESS_NAME,canaryAnnotations);
+        updateAnnotations(NAMESPACE,STABLE_INGRESS_NAME,stableAnnotations);
+
+        System.out.println("update success");
+    }
+
+
 }

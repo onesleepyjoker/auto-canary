@@ -25,6 +25,11 @@ public class CCEServiceImpl implements CCEService {
     final String NAMESPACE="default";
     final String STABLE_INGRESS_NAME="project";
     final String CANARY_INGRESS_NAME="new-project";
+    //灰度发布相关常量
+    final String HEADER="canary";
+    final String CANARY_HEADER_TEST_PATTERN="^tester$";
+    final String CANARY_HEADER_NORMAL_PATTERN="^(new|tester)$";
+    final String STABLE_HEADER_VALUE="tester";
 
     /**
      * 获取ingress的注解
@@ -72,16 +77,44 @@ public class CCEServiceImpl implements CCEService {
      * 用于稳定版开始测试按钮
      */
     @Override
-    public void cutStableFlow() {
-        
+    public void cutStableFlow() throws ApiException {
+        Map<String, String> canaryAnnotations = getAnnotations(NAMESPACE, CANARY_INGRESS_NAME);
+        Map<String, String> stableAnnotations = getAnnotations(NAMESPACE, STABLE_INGRESS_NAME);
+
+        //切断内侧用户流量
+        canaryAnnotations.put("nginx.ingress.kubernetes.io/canary","false");
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary","true");
+        // 保证状态为目标状态
+        canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
+        canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-pattern",CANARY_HEADER_NORMAL_PATTERN);
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-value",STABLE_HEADER_VALUE);
+
+        // 更新注解
+        updateAnnotations(NAMESPACE,CANARY_INGRESS_NAME,canaryAnnotations);
+        updateAnnotations(NAMESPACE,STABLE_INGRESS_NAME,stableAnnotations);
     }
 
     /**
      * 用于稳定版正式发布按钮
      */
     @Override
-    public void resumeStableFlow() {
+    public void resumeStableFlow() throws ApiException {
+        Map<String, String> canaryAnnotations = getAnnotations(NAMESPACE, CANARY_INGRESS_NAME);
+        Map<String, String> stableAnnotations = getAnnotations(NAMESPACE, STABLE_INGRESS_NAME);
 
+        //切断内侧用户流量
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary","false");
+        canaryAnnotations.put("nginx.ingress.kubernetes.io/canary","true");
+        // 保证状态为目标状态
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
+        canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-value",STABLE_HEADER_VALUE);
+        canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-pattern",CANARY_HEADER_NORMAL_PATTERN);
+
+        // 更新注解
+        updateAnnotations(NAMESPACE,STABLE_INGRESS_NAME,stableAnnotations);
+        updateAnnotations(NAMESPACE,CANARY_INGRESS_NAME,canaryAnnotations);
     }
 
     /**
@@ -90,17 +123,21 @@ public class CCEServiceImpl implements CCEService {
      */
     @Override
     public void cutCanaryFlow() throws ApiException {
-        Map<String, String> annotations = getAnnotations(NAMESPACE, CANARY_INGRESS_NAME);
-        // 移除旧的注解
-        if (annotations.get("nginx.ingress.kubernetes.io/canary-by-header-pattern") != null) {
-            annotations.remove("nginx.ingress.kubernetes.io/canary-by-header-pattern");
-        }
-        //保证状态为目标状态
+        Map<String, String> canaryAnnotations = getAnnotations(NAMESPACE, CANARY_INGRESS_NAME);
+        Map<String, String> stableAnnotations = getAnnotations(NAMESPACE, STABLE_INGRESS_NAME);
 
+        //切断内侧用户流量
+        canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-pattern",CANARY_HEADER_TEST_PATTERN);
+        // 保证状态为目标状态
+        canaryAnnotations.put("nginx.ingress.kubernetes.io/canary","true");
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary","false");
+        canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-value",STABLE_HEADER_VALUE);
 
         // 更新注解
-        annotations.put("nginx.ingress.kubernetes.io/canary-by-header-value", "tester");
-        updateAnnotations(NAMESPACE,CANARY_INGRESS_NAME,annotations);
+        updateAnnotations(NAMESPACE,CANARY_INGRESS_NAME,canaryAnnotations);
+        updateAnnotations(NAMESPACE,STABLE_INGRESS_NAME,stableAnnotations);
     }
 
     /**
@@ -108,15 +145,21 @@ public class CCEServiceImpl implements CCEService {
      */
     @Override
     public void resumeCanaryFlow() throws ApiException {
-        Map<String, String> annotations = getAnnotations(NAMESPACE, CANARY_INGRESS_NAME);
-        // 移除旧的注解
-        if (annotations.get("nginx.ingress.kubernetes.io/canary-by-header-value") != null) {
-            annotations.remove("nginx.ingress.kubernetes.io/canary-by-header-value");
-        }
+        Map<String, String> canaryAnnotations = getAnnotations(NAMESPACE, CANARY_INGRESS_NAME);
+        Map<String, String> stableAnnotations = getAnnotations(NAMESPACE, STABLE_INGRESS_NAME);
+
+        //恢复内侧用户流量
+        canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-pattern", CANARY_HEADER_NORMAL_PATTERN);
         //保证状态为目标状态
+        canaryAnnotations.put("nginx.ingress.kubernetes.io/canary","true");
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary","false");
+        canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-value",STABLE_HEADER_VALUE);
+
         // 更新注解
-        annotations.put("nginx.ingress.kubernetes.io/canary-by-header-pattern", "^(new|tester)$");
-        updateAnnotations(NAMESPACE,CANARY_INGRESS_NAME,annotations);
+        updateAnnotations(NAMESPACE,CANARY_INGRESS_NAME,canaryAnnotations);
+        updateAnnotations(NAMESPACE,STABLE_INGRESS_NAME,stableAnnotations);
     }
 
     @Override
