@@ -8,6 +8,7 @@ import com.iscas.autoCanary.exception.BusinessException;
 import com.iscas.autoCanary.model.domain.User;
 import com.iscas.autoCanary.model.domain.request.UserRegisterRequest;
 import com.iscas.autoCanary.service.CCEService;
+import io.kubernetes.client.openapi.ApiException;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -73,6 +74,17 @@ public class CCEController {
         }
         // todo 修改configMap，恢复灰度版本流量
         cceService.resumeCanaryFlow();
+        return ResultUtils.success(null);
+    }
+
+    @GetMapping("ingress/getStatus")
+    public BaseResponse getIngressStatus(HttpServletRequest request) throws ApiException {
+        Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
+        User currentUser = (User) userObj;
+        if (currentUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+        cceService.getIngressStatus();
         return ResultUtils.success(null);
     }
 }
