@@ -10,6 +10,8 @@ package com.iscas.autoCanary.common;
 public enum ErrorCode {
 
     SUCCESS(0, "ok", ""),
+    NO_INGRESS(30000,"没有相关Ingress资源",""),
+    INGRESS_CONFIG_ERROR(30001,"Ingress配置文件错误",""),
     PARAMS_ERROR(40000, "请求参数错误", ""),
     NULL_ERROR(40001, "请求数据为空", ""),
     NOT_LOGIN(40100, "未登录", ""),
