@@ -32,7 +32,7 @@ public class CCEController {
     public CCEService cceService;
 
     @PostMapping("/stable/cutFlow")
-    public BaseResponse cutStableFlow(HttpServletRequest request) {
+    public BaseResponse cutStableFlow(HttpServletRequest request) throws ApiException {
         Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
         User currentUser = (User) userObj;
         if (currentUser == null) {
@@ -47,7 +47,7 @@ public class CCEController {
     public BaseResponse resumeOldFlow(HttpServletRequest request) {
 
     @PostMapping("/stable/resumeFlow")
-    public BaseResponse resumeStableFlow(HttpServletRequest request) {
+    public BaseResponse resumeStableFlow(HttpServletRequest request) throws ApiException {
         Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
         User currentUser = (User) userObj;
         if (currentUser == null) {
@@ -62,7 +62,7 @@ public class CCEController {
     @PostMapping("/updateNew/cutFlow")
     public BaseResponse cutNewFlow(HttpServletRequest request) {
     @PostMapping("/canary/cutFlow")
-    public BaseResponse cutCanaryFlow(HttpServletRequest request) {
+    public BaseResponse cutCanaryFlow(HttpServletRequest request) throws ApiException {
         Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
         User currentUser = (User) userObj;
         if (currentUser == null) {
@@ -78,7 +78,7 @@ public class CCEController {
     public BaseResponse resumeNewFlow(HttpServletRequest request) {
 
     @PostMapping("/canary/resumeFlow")
-    public BaseResponse resumeCanaryFlow(HttpServletRequest request) {
+    public BaseResponse resumeCanaryFlow(HttpServletRequest request) throws ApiException {
         Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
         User currentUser = (User) userObj;
         if (currentUser == null) {
