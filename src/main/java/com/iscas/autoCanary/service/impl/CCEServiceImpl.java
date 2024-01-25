@@ -10,9 +10,11 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * @author windpo
@@ -29,7 +31,7 @@ public class CCEServiceImpl implements CCEService {
     final String HEADER="canary";
     final String CANARY_HEADER_TEST_PATTERN="^tester$";
     final String CANARY_HEADER_NORMAL_PATTERN="^(new|tester)$";
-    final String STABLE_HEADER_VALUE="tester";
+    final String STABLE_HEADER_PATTERN="^tester$";
 
     /**
      * 获取ingress的注解
@@ -88,7 +90,7 @@ public class CCEServiceImpl implements CCEService {
         canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
         stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
         canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-pattern",CANARY_HEADER_NORMAL_PATTERN);
-        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-value",STABLE_HEADER_VALUE);
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-pattern",STABLE_HEADER_PATTERN);
 
         // 更新注解
         updateAnnotations(NAMESPACE,CANARY_INGRESS_NAME,canaryAnnotations);
@@ -109,7 +111,7 @@ public class CCEServiceImpl implements CCEService {
         // 保证状态为目标状态
         stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
         canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
-        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-value",STABLE_HEADER_VALUE);
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-value",STABLE_HEADER_PATTERN);
         canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-pattern",CANARY_HEADER_NORMAL_PATTERN);
 
         // 更新注解
@@ -133,7 +135,7 @@ public class CCEServiceImpl implements CCEService {
         stableAnnotations.put("nginx.ingress.kubernetes.io/canary","false");
         canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
         stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
-        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-value",STABLE_HEADER_VALUE);
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-value",STABLE_HEADER_PATTERN);
 
         // 更新注解
         updateAnnotations(NAMESPACE,CANARY_INGRESS_NAME,canaryAnnotations);
@@ -155,7 +157,7 @@ public class CCEServiceImpl implements CCEService {
         stableAnnotations.put("nginx.ingress.kubernetes.io/canary","false");
         canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
         stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
-        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-value",STABLE_HEADER_VALUE);
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-value",STABLE_HEADER_PATTERN);
 
         // 更新注解
         updateAnnotations(NAMESPACE,CANARY_INGRESS_NAME,canaryAnnotations);
@@ -166,7 +168,25 @@ public class CCEServiceImpl implements CCEService {
     public String getIngressStatus() throws ApiException {
         Map<String, String> stableAnnotations = getAnnotations(NAMESPACE, STABLE_INGRESS_NAME);
         Map<String, String> canaryAnnotations = getAnnotations(NAMESPACE, CANARY_INGRESS_NAME);
-        //todo 对annotations进行处理并返回
-        return null;
+        List<String> stableValues = stableAnnotations.values().stream().collect(Collectors.toList());
+        List<String> canaryValues = canaryAnnotations.values().stream().collect(Collectors.toList());
+        if (stableValues.get(0).equals("false")&& canaryValues.get(0).equals("true")){
+            if (canaryValues.get(2).equals("^(new|tester)$")){
+                return "正常运行阶段";
+            }
+            else if (canaryValues.get(2).equals("^tester$")){
+                return "灰度版本内部测试阶段";
+            }
+            else{
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR,"请求头规则出错，请联系工作人员");
+            }
+        } else if (stableValues.get(0).equals("true")&& canaryValues.get(0).equals("false")){
+            if (stableValues.get(2).equals("^tester$")){
+                return "稳定版本内部测试阶段";
+            }else{
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR,"请求头规则出错，请联系工作人员");
+            }
+        }
+        return "查询失败";
     }
 }

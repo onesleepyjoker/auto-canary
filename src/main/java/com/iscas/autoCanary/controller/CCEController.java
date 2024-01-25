@@ -24,12 +24,9 @@ import javax.servlet.http.HttpServletRequest;
 @RestController
 @RequestMapping("/cce")
 public class CCEController {
-//    稳定最新版测试
-    @PostMapping("/updateOld/cutFlow")
-    public BaseResponse cutOldFlow(HttpServletRequest request) {
-
+    //    稳定最新版测试
     @Autowired
-    public CCEService cceService;
+    private CCEService cceService;
 
     @PostMapping("/stable/cutFlow")
     public BaseResponse cutStableFlow(HttpServletRequest request) throws ApiException {
@@ -38,13 +35,12 @@ public class CCEController {
         if (currentUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
-        // todo 修改configMap，切断稳定版本流量
         cceService.cutStableFlow();
-        return ResultUtils.success(null);
+        System.out.println("稳定版本测试");
+        cceService.getIngressStatus();
+        return ResultUtils.success("稳定版测试阶段部署完成");
     }
 //    稳定最新版发布
-    @PostMapping("/updateOld/resumeFlow")
-    public BaseResponse resumeOldFlow(HttpServletRequest request) {
 
     @PostMapping("/stable/resumeFlow")
     public BaseResponse resumeStableFlow(HttpServletRequest request) throws ApiException {
@@ -53,14 +49,13 @@ public class CCEController {
         if (currentUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
-        // todo 修改configMap，恢复稳定版本流量
         cceService.resumeStableFlow();
-        return ResultUtils.success(null);
+        System.out.println("稳定版本发布");
+        cceService.getIngressStatus();
+        return ResultUtils.success("稳定版发布完成");
     }
 
-//    灰度版本测试
-    @PostMapping("/updateNew/cutFlow")
-    public BaseResponse cutNewFlow(HttpServletRequest request) {
+    //    灰度版本测试
     @PostMapping("/canary/cutFlow")
     public BaseResponse cutCanaryFlow(HttpServletRequest request) throws ApiException {
         Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
@@ -68,14 +63,13 @@ public class CCEController {
         if (currentUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
-        // todo 修改configMap，切断灰度版本流量
         cceService.cutCanaryFlow();
-        return ResultUtils.success(null);
+        System.out.println("灰度版本测试");
+        cceService.getIngressStatus();
+        return ResultUtils.success("灰度版本测试阶段部署完成");
     }
 
-//灰度版本发布
-    @PostMapping("/updateNew/resumeFlow")
-    public BaseResponse resumeNewFlow(HttpServletRequest request) {
+    //  灰度版本发布
 
     @PostMapping("/canary/resumeFlow")
     public BaseResponse resumeCanaryFlow(HttpServletRequest request) throws ApiException {
@@ -84,19 +78,20 @@ public class CCEController {
         if (currentUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
-        // todo 修改configMap，恢复灰度版本流量
         cceService.resumeCanaryFlow();
-        return ResultUtils.success(null);
+        System.out.println("灰度版本发布");
+        cceService.getIngressStatus();
+        return ResultUtils.success("灰度版本发布完成");
     }
 
-    @GetMapping("ingress/getStatus")
+    @PostMapping("ingress/getStatus")
     public BaseResponse getIngressStatus(HttpServletRequest request) throws ApiException {
         Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
         User currentUser = (User) userObj;
         if (currentUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
-        cceService.getIngressStatus();
-        return ResultUtils.success(null);
+        String ingressStatus = cceService.getIngressStatus();
+        return ResultUtils.success(ingressStatus);
     }
 }

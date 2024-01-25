@@ -3,23 +3,15 @@ package com.iscas.autoCanary.service;
 
 import com.iscas.autoCanary.common.ErrorCode;
 import com.iscas.autoCanary.exception.BusinessException;
-import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.NetworkingV1Api;
 import io.kubernetes.client.openapi.models.V1Ingress;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.util.ClientBuilder;
-import io.kubernetes.client.util.KubeConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author windpo
@@ -35,7 +27,7 @@ public class CCEClientTest {
     final String HEADER="canary";
     final String CANARY_HEADER_TEST_PATTERN="^tester$";
     final String CANARY_HEADER_NORMAL_PATTERN="^(new|tester)$";
-    final String STABLE_HEADER_VALUE="tester";
+    final String STABLE_HEADER_PATTERN ="^tester$";
 
     /**
      * 获取ingress的注解
@@ -100,6 +92,7 @@ public class CCEClientTest {
             System.err.println("Kubernetes API exception: " + e.getMessage());
             e.printStackTrace();
         }
+
     }
 
     /**
@@ -108,14 +101,51 @@ public class CCEClientTest {
      */
     @Test
     public void printGetAnnotations() throws ApiException {
-        Map<String, String> stableAnnotatinos = getAnnotations(NAMESPACE, STABLE_INGRESS_NAME);
+        Map<String, String> stableAnnotations = getAnnotations(NAMESPACE, STABLE_INGRESS_NAME);
         Map<String, String> canaryAnnotations = getAnnotations(NAMESPACE, CANARY_INGRESS_NAME);
 
         System.out.println("stable-annotations:");
-        stableAnnotatinos.forEach((k,v)-> System.out.println(k+":"+v));
+        stableAnnotations.forEach((k,v)-> System.out.println(k+":"+v));
         System.out.println("canary-annotations:");
         canaryAnnotations.forEach((k,v)-> System.out.println(k+":"+v));
+
+        String version = getVersion(stableAnnotations, canaryAnnotations);
+        System.out.println(version);
+//        stable-annotations:
+//nginx.ingress.kubernetes.io/canary:false
+//nginx.ingress.kubernetes.io/canary-by-header:canary
+//nginx.ingress.kubernetes.io/canary-by-header-value:tester
+//      canary-annotations:
+//nginx.ingress.kubernetes.io/canary:true
+//nginx.ingress.kubernetes.io/canary-by-header:canary
+//nginx.ingress.kubernetes.io/canary-by-header-pattern:^(new|tester)$
     }
+
+    public String getVersion(Map<String,String> statbleAnnotations,Map<String,String> canaryAnnotations){
+        List<String> stableValues = statbleAnnotations.values().stream().collect(Collectors.toList());
+        List<String> canaryValues = canaryAnnotations.values().stream().collect(Collectors.toList());
+        if (stableValues.get(0).equals("false")&& canaryValues.get(0).equals("true")){
+            if (canaryValues.get(2).equals("^(new|tester)$")){
+                return "当前阶段：正常运行阶段";
+            }
+            else if (canaryValues.get(2).equals("^tester$")){
+                return "当前阶段：灰度版本测试阶段";
+            }
+            else{
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR,"请求头规则出错，请联系工作人员");
+            }
+        } else if (stableValues.get(0).equals("true")&& canaryValues.get(0).equals("false")){
+            if (stableValues.get(2).equals("^(new|tester)$")){
+                return "当前阶段：正常运行阶段";
+            }else if (stableValues.get(2).equals("^tester$")){
+                return "当前阶段：稳定版本测试阶段";
+            }else{
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR,"请求头规则出错，请联系工作人员");
+            }
+        }
+        return "查询失败";
+    }
+
 
 
     /**
@@ -133,11 +163,15 @@ public class CCEClientTest {
         canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
         stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
         canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-pattern",CANARY_HEADER_NORMAL_PATTERN);
-        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-value",STABLE_HEADER_VALUE);
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-pattern", STABLE_HEADER_PATTERN);
 
         // 更新注解
         updateAnnotations(NAMESPACE,CANARY_INGRESS_NAME,canaryAnnotations);
         updateAnnotations(NAMESPACE,STABLE_INGRESS_NAME,stableAnnotations);
+
+        printGetAnnotations();
+        String version = getVersion(stableAnnotations, canaryAnnotations);
+        System.out.println(version);
 
         System.out.println("update success");
     }
@@ -156,12 +190,16 @@ public class CCEClientTest {
         // 保证状态为目标状态
         stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
         canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
-        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-value",STABLE_HEADER_VALUE);
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-value", STABLE_HEADER_PATTERN);
         canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-pattern",CANARY_HEADER_NORMAL_PATTERN);
 
         // 更新注解
         updateAnnotations(NAMESPACE,STABLE_INGRESS_NAME,stableAnnotations);
         updateAnnotations(NAMESPACE,CANARY_INGRESS_NAME,canaryAnnotations);
+
+        printGetAnnotations();
+        String version = getVersion(stableAnnotations, canaryAnnotations);
+        System.out.println(version);
 
         System.out.println("update success");
     }
@@ -182,11 +220,15 @@ public class CCEClientTest {
         stableAnnotations.put("nginx.ingress.kubernetes.io/canary","false");
         canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
         stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
-        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-value",STABLE_HEADER_VALUE);
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-value", STABLE_HEADER_PATTERN);
 
         // 更新注解
         updateAnnotations(NAMESPACE,CANARY_INGRESS_NAME,canaryAnnotations);
         updateAnnotations(NAMESPACE,STABLE_INGRESS_NAME,stableAnnotations);
+
+        printGetAnnotations();
+        String version = getVersion(stableAnnotations, canaryAnnotations);
+        System.out.println(version);
 
         System.out.println("update success");
     }
@@ -206,11 +248,15 @@ public class CCEClientTest {
         stableAnnotations.put("nginx.ingress.kubernetes.io/canary","false");
         canaryAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
         stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header",HEADER);
-        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-value",STABLE_HEADER_VALUE);
+        stableAnnotations.put("nginx.ingress.kubernetes.io/canary-by-header-value", STABLE_HEADER_PATTERN);
 
         // 更新注解
         updateAnnotations(NAMESPACE,CANARY_INGRESS_NAME,canaryAnnotations);
         updateAnnotations(NAMESPACE,STABLE_INGRESS_NAME,stableAnnotations);
+
+        printGetAnnotations();
+        String version = getVersion(stableAnnotations, canaryAnnotations);
+        System.out.println(version);
 
         System.out.println("update success");
     }
