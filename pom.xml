@@ -76,6 +76,12 @@
             <artifactId>client-java</artifactId>
             <version>19.0.0</version>
         </dependency>
+
+<!--        <dependency>-->
+<!--            <groupId>io.kubernetes</groupId>-->
+<!--            <artifactId>client-util</artifactId>-->
+<!--            <version>13.0.0</version>-->
+<!--        </dependency>-->
     </dependencies>
 
     <build>
@@ -90,6 +96,14 @@
                             <artifactId>lombok</artifactId>
                         </exclude>
                     </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>9</source>
+                    <target>9</target>
                 </configuration>
             </plugin>
         </plugins>
