@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql-test
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: mysql
+        version: v1
+    spec:
+      containers:
+        - name: container-1
+          image: mysql:5.7
+          command:
+            - /bin/bash
+          args:
+            - '-c'
+            - rm -rf /var/lib/mysql/lost+found;docker-entrypoint.sh mysqld;
+          env:
+            - name: MYSQL_ROOT_PASSWORD  # MySQL的root用户密码，可自定义
+              value: password@123
+            - name: MYSQL_DATABASE       # 镜像启动时要创建的数据库名称，可自定义
+              value: database
+            - name: MYSQL_USER           # 数据库用户名称，可自定义
+              value: db_user
+            - name: MYSQL_PASSWORD       # 数据库用户密码，可自定义
+              value: password@123
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 250m
+              memory: 512Mi
+          volumeMounts:
+            - name: mysql
+              mountPath: /var/lib/mysql
+      imagePullSecrets:
+        - name: default-secret
+  serviceName: headless-mysql
+  volumeClaimTemplates:  #动态挂载云硬盘示例
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: mysql
+        namespace: default
+        annotations:
+          everest.io/disk-volume-type: SAS  # 云硬盘的类型
+        labels:
+          failure-domain.beta.kubernetes.io/region: cn-north-4  #云硬盘所在的区域
+          failure-domain.beta.kubernetes.io/zone: cn-north-4b   #云硬盘所在的可用区，必须和工作负载部署的节点可用区一致
+      spec:
+        accessModes:
+          - ReadWriteOnce  # 云硬盘必须为ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+        storageClassName: csi-disk  # StorageClass的名称，云硬盘为csi-disk

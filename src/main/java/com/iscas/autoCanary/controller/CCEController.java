@@ -14,8 +14,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.yaml.snakeyaml.Yaml;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * @author windpo
@@ -94,4 +100,39 @@ public class CCEController {
         String ingressStatus = cceService.getIngressStatus();
         return ResultUtils.success(ingressStatus);
     }
+
+//    选择华为云镜像仓库的镜像，创建工作负载
+    @PostMapping("deployment/create")
+    public BaseResponse createDeployment(HttpServletRequest request, @RequestParam("file")MultipartFile file) {
+        Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
+        User currentUser = (User) userObj;
+        if (currentUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+
+//        创建一个临时的文件用来封装yaml配置文件
+        File tmpFile = new File("/tmp/deployment.yaml");
+        try (FileOutputStream fos = new FileOutputStream(tmpFile)) {
+            // 将 MultipartFile 中的数据写入到临时文件
+            InputStream is = file.getInputStream();
+            byte[] buffer = new byte[1024];
+            int len;
+            while ((len = is.read(buffer)) != -1) {
+                fos.write(buffer, 0, len);
+            }
+        } catch (IOException e) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "上传文件失败");
+        }
+        try {
+            cceService.createDeployment(tmpFile);
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "创建Deployment失败");
+        }finally {
+            // 删除临时文件
+            tmpFile.delete();
+        }
+        return ResultUtils.success("镜像创建成功");
+    }
+
+
 }

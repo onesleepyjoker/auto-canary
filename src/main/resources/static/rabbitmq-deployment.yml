@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    description: 测试部署华为云仓库镜像的deployment负载
+  labels:
+    appgroup: ''
+    version: v1
+  name: rabbitmq-test
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: rabbitmq-test
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: rabbitmq-test
+        version: v1
+    spec:
+      containers:
+        - name: container-1
+          image: >-
+            swr.cn-east-3.myhuaweicloud.com/isrc-test-develop-shanghai/rabbitmq:3.12-management
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PAAS_APP_NAME
+              value: rabbitmq-test
+            - name: PAAS_NAMESPACE
+              value: default
+            - name: PAAS_PROJECT_ID
+              value: 7f13238271724067ab27b812a440c461
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 250m
+              memory: 512Mi
+      imagePullSecrets:
+        - name: default-secret
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      tolerations:
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
+      initContainers: []
+      volumes: []
+  replicas: 2
+  revisionHistoryLimit: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  progressDeadlineSeconds: 600
+
