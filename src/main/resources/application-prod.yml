@@ -3,9 +3,9 @@ spring:
   # DataSource Config
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
-    url: 'jdbc:mysql://sh-cynosdbmysql-grp-98pxrcoq.sql.tencentcdb.com:29164/user_center?useSSL=false'
-    username: {your_remote_root} #ex:root
-    password: {your_remote_password} #ex:123456
+    url: jdbc:mysql://localhost:3306/auto_canary
+    username: {youraccount}   #example:root
+    password: {yourpassword}   #example:123456
   # session 失效时间
   session:
     timeout: 86400

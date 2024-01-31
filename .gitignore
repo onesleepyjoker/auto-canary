@@ -37,3 +37,6 @@ build/
 
 ### k8s config ###
 **/src/main/resources/static/canary-test-kubeconfig.yaml
+
+### personal config ###
+**/src/main/resources/application-windpo.yaml
