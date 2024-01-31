@@ -203,16 +203,15 @@ public class CCEServiceImpl implements CCEService {
 
     //  获取deployment的相关信息 （查）
     public String getDeployment(String deploymentName) throws ApiException {
-            // 创建 apps API 实例
-            AppsV1Api appsV1Api = new AppsV1Api();
-            V1Deployment canaryDeployment = appsV1Api.readNamespacedDeployment(deploymentName, NAMESPACE, null);
-            // 返回 deployment 信息
-            return canaryDeployment.toString();
+        // 创建 apps API 实例
+        AppsV1Api appsV1Api = new AppsV1Api();
+        V1Deployment canaryDeployment = appsV1Api.readNamespacedDeployment(deploymentName, NAMESPACE, null);
+        // 返回 deployment 信息
+        return canaryDeployment.toString();
     }
 
     //    替换镜像deployment （改）
-    public void updateDeployment(String deploymentName, String imagesURL) {
-        try {
+    public int updateDeployment(String deploymentName, String imagesURL) throws ApiException {
             // 创建 apps API 实例
             AppsV1Api appsV1Api = new AppsV1Api();
 
@@ -227,96 +226,109 @@ public class CCEServiceImpl implements CCEService {
 
             // 更新 deployment
             stableDeployment.getSpec().getTemplate().getSpec().setContainers(List.of(v1Container));
-            appsV1Api.replaceNamespacedDeployment("project", "default", stableDeployment, null, null, null, null);
-
-            System.out.println("----------------------------------------------------------------------");
-
-        } catch (ApiException e) {
-            System.err.println("Kubernetes API exception: " + e.getMessage());
-            e.printStackTrace();
-        }
+            appsV1Api.replaceNamespacedDeployment(deploymentName, "default", stableDeployment, null, null, null, null);
+            return 1;
     }
 
     //    根据yaml创建deployment  （增）
-    public void createDeployment(File file) throws IOException, ApiException {
+    public int createDeployment(File file) throws IOException, ApiException {
         // 创建 AppsV1Api 对象
         AppsV1Api appsV1Api = new AppsV1Api();
+        String absolutePath = file.getAbsolutePath();
+        System.out.println(absolutePath);
 
         // 从 YAML 文件中加载 Deployment 对象
         V1Deployment deployment = (V1Deployment) Yaml.load(file);
         V1Deployment createdDeployment = appsV1Api.createNamespacedDeployment(NAMESPACE, deployment, null, null, null, null);
         System.out.println("Deployment created successfully: " + createdDeployment.getMetadata().getName());
+        return 1;
     }
 
     //    删除deployment  （删）
-    public void deleteDeployment(String deploymentName) throws ApiException {
+    public int deleteDeployment(String deploymentName) throws ApiException {
         // 创建 AppsV1Api 对象
         AppsV1Api appsV1Api = new AppsV1Api();
 
         // 删除 Deployment
-        appsV1Api.deleteNamespacedDeployment(deploymentName, NAMESPACE, null, null, null, null, null,null);
+        appsV1Api.deleteNamespacedDeployment(deploymentName, NAMESPACE, null, null, null, null, null, null);
         System.out.println("Deployment deleted successfully");
+        return 1;
     }
 
-//    根据yaml创建statefulset  （增）
-    public void createStatefulSet(File file) throws IOException, ApiException {
+    //    根据yaml创建statefulset  （增）
+    public int createStatefulSet(File file) throws IOException, ApiException {
         // 创建 AppsV1Api 对象
         AppsV1Api appsV1Api = new AppsV1Api();
         // 从 YAML 文件中加载 Deployment 对象
         V1StatefulSet statefulSet = (V1StatefulSet) Yaml.load(file);
-        V1StatefulSet createStatefulSet = appsV1Api.createNamespacedStatefulSet(NAMESPACE, statefulSet, null, null, null, null);
-        System.out.println("StatefulSet created successfully: " + createStatefulSet.getMetadata().getName());
+        appsV1Api.createNamespacedStatefulSet(NAMESPACE, statefulSet, null, null, null, null);
+        System.out.println("创建成功");
+        return 1;
     }
 
 
     //    替换镜像stateful   （改）
-    public void updateStatefulSet(String statefulSetName, String imagesURL) throws ApiException {
+    public int updateStatefulSet(String statefulSetName, String imagesURL) throws ApiException {
 //            获取stateful对象和镜像列表
-            AppsV1Api appsV1Api = new AppsV1Api();
-            V1StatefulSet stableStatefulSet = appsV1Api.readNamespacedStatefulSet(statefulSetName, NAMESPACE, null);
-            V1Container v1Container = stableStatefulSet.getSpec().getTemplate().getSpec().getContainers().get(0);
+        AppsV1Api appsV1Api = new AppsV1Api();
+        V1StatefulSet stableStatefulSet = appsV1Api.readNamespacedStatefulSet(statefulSetName, NAMESPACE, null);
+        V1Container v1Container = stableStatefulSet.getSpec().getTemplate().getSpec().getContainers().get(0);
 //            将新的镜像和拉取镜像的secret策略set进去
-            stableStatefulSet.getSpec().getTemplate().getSpec().setImagePullSecrets(List.of(new V1LocalObjectReference().name(SECRET_NAME)));
-            v1Container.setImage(imagesURL);//填写第三方库镜像的网址  （或者默认填写官方的的镜像名称 nginx：latest）
+        stableStatefulSet.getSpec().getTemplate().getSpec().setImagePullSecrets(List.of(new V1LocalObjectReference().name(SECRET_NAME)));
+        v1Container.setImage(imagesURL);//填写第三方库镜像的网址  （或者默认填写官方的的镜像名称 nginx：latest）
 //                        更新statefulset
-            appsV1Api.replaceNamespacedStatefulSet(statefulSetName, NAMESPACE, stableStatefulSet, null, null, null, null);
-            System.out.println("镜像更换成功");
+        appsV1Api.replaceNamespacedStatefulSet(statefulSetName, NAMESPACE, stableStatefulSet, null, null, null, null);
+        System.out.println("镜像更换成功");
+        return 1;
     }
 
-//    删除statefulset
-    public void deleteStatefulSet(String statefulSetName) throws ApiException {
+    //    删除statefulset
+    public int deleteStatefulSet(String statefulSetName) throws ApiException {
         // 创建 AppsV1Api 对象
         AppsV1Api appsV1Api = new AppsV1Api();
 
         // 删除 Deployment
-        appsV1Api.deleteNamespacedStatefulSet(statefulSetName, NAMESPACE, null, null, null, null, null,null);
+        appsV1Api.deleteNamespacedStatefulSet(statefulSetName, NAMESPACE, null, null, null, null, null, null);
         System.out.println("Deployment deleted successfully");
+        return 1;
     }
 
-//      查询statefulSet信息  （查）
+    //      查询statefulSet信息  （查）
     public String getStatefulSet(String StatefulSetName) throws ApiException {
-            // 创建 apps API 实例
-            AppsV1Api appsV1Api = new AppsV1Api();
-            V1StatefulSet canaryDeployment = appsV1Api.readNamespacedStatefulSet(StatefulSetName, NAMESPACE, null);
-            //print
-            System.out.println("canary deployment info:: " + canaryDeployment);
-            return canaryDeployment.toString();//返回查询的信息
+        // 创建 apps API 实例
+        AppsV1Api appsV1Api = new AppsV1Api();
+        V1StatefulSet canaryDeployment = appsV1Api.readNamespacedStatefulSet(StatefulSetName, NAMESPACE, null);
+        //print
+        System.out.println("canary deployment info:: " + canaryDeployment);
+        return canaryDeployment.toString();//返回查询的信息
     }
 
-//    查询secret信息  （查）
+    //    查询secret信息  （查）
     public String getSecret(String secretName) throws ApiException {
         CoreV1Api coreV1Api = new CoreV1Api();
         V1Secret v1Secret = coreV1Api.readNamespacedSecret(secretName, NAMESPACE, null);
         return v1Secret.toString();
     }
 
-//        创建secret  （增）
+    //        创建secret  （增）
     public void createSecret(String secretName, String secretValue) throws ApiException {
         CoreV1Api coreV1Api = new CoreV1Api();
         V1Secret v1Secret = new V1Secret();
         v1Secret.putDataItem(secretName, secretValue.getBytes());
-        coreV1Api.createNamespacedSecret(NAMESPACE, v1Secret, null,null, null, null);
+        coreV1Api.createNamespacedSecret(NAMESPACE, v1Secret, null, null, null, null);
         System.out.println("Secret created successfully");
+    }
+
+    public List<String> getDeploymentList() throws ApiException {
+        AppsV1Api appsV1Api = new AppsV1Api();
+        V1DeploymentList v1DeploymentList = appsV1Api.listDeploymentForAllNamespaces(null, null,
+                null, null, null, null,
+                null, null, null,
+                null, null);
+        List<String> deploymentList = v1DeploymentList.getItems().stream()
+                .map(v1Deployment -> v1Deployment.getMetadata().getName())
+                .collect(Collectors.toList());
+        return deploymentList;
     }
 
 }
