@@ -1,13 +1,13 @@
 package com.iscas.autoCanary.service;
 
 
+import cn.hutool.core.lang.UUID;
 import com.iscas.autoCanary.common.ErrorCode;
 import com.iscas.autoCanary.exception.BusinessException;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
-import io.kubernetes.client.openapi.apis.AppsV1Api;
-import io.kubernetes.client.openapi.apis.NetworkingV1Api;
+import io.kubernetes.client.openapi.apis.*;
 import io.kubernetes.client.openapi.models.*;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.Config;
@@ -21,6 +21,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
+import java.sql.SQLOutput;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -404,12 +405,26 @@ public class CCEClientTest {
 
     }
 
+//    获取到当前节点的所有负载deployment
+    @Test
+    public void getDeployments() throws ApiException {
+        AppsV1Api appsV1Api = new AppsV1Api();
+        V1DeploymentList v1DeploymentList = appsV1Api.listDeploymentForAllNamespaces(null, null,
+                null, null, null, null,
+                null, null, null,
+                null, null);
+        for (V1Deployment deployment : v1DeploymentList.getItems()) {
+            System.out.println(deployment.getMetadata().getName());
+        }
+    }
+
     @Value("${secret.name}")
     private String SECRET_NAME;
 
     @Test
     void testReadyaml(){
         System.out.println("secret name: " + SECRET_NAME);
+        System.out.println(UUID.fastUUID().toString());
     }
 
 }

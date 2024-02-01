@@ -4,6 +4,7 @@ import io.kubernetes.client.openapi.ApiException;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * @author windpo
@@ -20,24 +21,26 @@ public interface CCEService {
     public String getDeployment(String deploymentName) throws ApiException;
 
 //    替换镜像 更新
-    public void updateDeployment(String deploymentName, String imagesURL);
+    public int updateDeployment(String deploymentName, String imagesURL) throws ApiException;
 
 //    根据yaml创建负载
-    public void createDeployment(File file) throws IOException, ApiException;
+    public int createDeployment(File file) throws IOException, ApiException;
 
 //    删除负载
-    public void deleteDeployment(String deploymentName) throws ApiException;
+    public int deleteDeployment(String deploymentName) throws ApiException;
 
 //    查询statefulSet信息
     public String getStatefulSet(String statefulSetName) throws ApiException;
 
 //    更新statefulSet  通过镜像地址
-    public void updateStatefulSet(String statefulSetName, String imagesURL) throws ApiException;
+    public int updateStatefulSet(String statefulSetName, String imagesURL) throws ApiException;
 
 //    创建statefulSet 通过yaml
-    public void createStatefulSet(File file) throws IOException, ApiException;
+    public int createStatefulSet(File file) throws IOException, ApiException;
 
 //    删除statefulSet
-    public void deleteStatefulSet(String statefulSetName) throws ApiException;
+    public int deleteStatefulSet(String statefulSetName) throws ApiException;
+
+    public List<String> getDeploymentList() throws ApiException;
 
 }
