@@ -108,6 +108,17 @@
             <version>3.1.79</version>
         </dependency>
 
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+            <version>5.8.9</version>
+        </dependency>
+
+<!--        <dependency>-->
+<!--            <groupId>io.kubernetes</groupId>-->
+<!--            <artifactId>client-util</artifactId>-->
+<!--            <version>13.0.0</version>-->
+<!--        </dependency>-->
     </dependencies>
 
     <build>
