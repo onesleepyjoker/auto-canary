@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.iscas.autoCanary.common.ErrorCode;
 import com.iscas.autoCanary.mapper.UserMapper;
 import com.iscas.autoCanary.exception.BusinessException;
-import com.iscas.autoCanary.model.domain.User;
+import com.iscas.autoCanary.pojo.User;
 import com.iscas.autoCanary.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;

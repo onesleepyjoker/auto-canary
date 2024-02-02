@@ -40,3 +40,4 @@ build/
 
 ### personal config ###
 **/src/main/resources/application-windpo.yaml
+**/src/main/resources/application-joker.yml

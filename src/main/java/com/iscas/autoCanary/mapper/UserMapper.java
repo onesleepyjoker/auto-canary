@@ -1,6 +1,6 @@
 package com.iscas.autoCanary.mapper;
 
-import com.iscas.autoCanary.model.domain.User;
+import com.iscas.autoCanary.pojo.User;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

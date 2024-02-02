@@ -3,14 +3,12 @@ spring:
       active: '@build.profile.id@'
   application:
     name: auto-canary
-
 #  # DataSource Config
 #  datasource:
 #    driver-class-name: com.mysql.jdbc.Driver
-#    url: jdbc:mysql://localhost:3306/auto_canary
-#    username: {youraccount}   #example:root
-#    password: {yourpassword}   #example:123456
-
+#    url: jdbc:mysql://localhost:3306/yupi
+#    username: root   #example:root
+#    password: liyifan81349219 #example:123456
   # session 失效时间
   session:
     timeout: 86400
@@ -30,3 +28,6 @@ mybatis-plus:
 #HUAWEICLOUD_SDK_AK: xxxxxxxxx
 #HUAWEICLOUD_SDK_SK: xxxxxxxxx
 
+secret:
+  name: my-secret
+# 每一个镜像仓库对应一种secret，只需要在这里修改对应的secret名称使用不同的secret即可完成不同镜像仓库的切换

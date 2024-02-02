@@ -1,6 +1,6 @@
 package com.iscas.autoCanary.config;
 
-import com.huaweicloud.sdk.core.auth.BasicCredentials;
+import   com.huaweicloud.sdk.core.auth.BasicCredentials;
 import com.huaweicloud.sdk.core.auth.ICredential;
 import com.huaweicloud.sdk.swr.v2.SwrClient;
 import com.huaweicloud.sdk.swr.v2.region.SwrRegion;
@@ -16,7 +16,7 @@ public class SWRConfig {
     String sk;
 
     //指定镜像仓库的资源区域
-    private final String REGION="cn-east-3";
+    private final String REGION="cn-north-4";
 
     @Bean
     public SwrClient swrClient(){

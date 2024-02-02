@@ -41,6 +41,10 @@ public interface CCEService {
 //    删除statefulSet
     public int deleteStatefulSet(String statefulSetName) throws ApiException;
 
+//    获取deployment列表
     public List<String> getDeploymentList() throws ApiException;
+
+//    获取statefulSet列表
+    public List<String> getStatefulSetList() throws ApiException;
 
 }

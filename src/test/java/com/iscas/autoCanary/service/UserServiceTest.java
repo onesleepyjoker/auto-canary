@@ -1,7 +1,7 @@
 package com.iscas.autoCanary.service;
 
 
-import com.iscas.autoCanary.model.domain.User;
+import com.iscas.autoCanary.pojo.User;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
