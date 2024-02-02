@@ -4,7 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.iscas.autoCanary.mapper.UserMapper">
 
-    <resultMap id="BaseResultMap" type="com.iscas.autoCanary.model.domain.User">
+    <resultMap id="BaseResultMap" type="com.iscas.autoCanary.pojo.User">
         <id property="id" column="id" jdbcType="BIGINT"/>
         <result property="username" column="username" jdbcType="VARCHAR"/>
         <result property="userAccount" column="userAccount" jdbcType="VARCHAR"/>
@@ -13,7 +13,7 @@
         <result property="userPassword" column="userPassword" jdbcType="VARCHAR"/>
         <result property="phone" column="phone" jdbcType="VARCHAR"/>
         <result property="email" column="email" jdbcType="VARCHAR"/>
-        <result property="userStatus" column="userStatus" jdbcType="INTEGER"/>
+        <result property="imageStatus" column="imageStatus" jdbcType="INTEGER"/>
         <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
         <result property="updateTime" column="updateTime" jdbcType="TIMESTAMP"/>
         <result property="isDelete" column="isDelete" jdbcType="TINYINT"/>
@@ -24,7 +24,7 @@
     <sql id="Base_Column_List">
         id,username,userAccount,
         avatarUrl,gender,userPassword,
-        phone,email,userStatus,
+        phone,email,imageStatus,
         createTime,updateTime,isDelete,
         userRole,planetCode
     </sql>

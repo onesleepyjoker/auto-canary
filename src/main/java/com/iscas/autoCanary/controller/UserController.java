@@ -7,7 +7,7 @@ import com.iscas.autoCanary.common.ResultUtils;
 import com.iscas.autoCanary.contant.UserConstant;
 import com.iscas.autoCanary.service.UserService;
 import com.iscas.autoCanary.exception.BusinessException;
-import com.iscas.autoCanary.model.domain.User;
+import com.iscas.autoCanary.pojo.User;
 import com.iscas.autoCanary.model.domain.request.UserLoginRequest;
 import com.iscas.autoCanary.model.domain.request.UserRegisterRequest;
 import org.apache.commons.lang3.StringUtils;

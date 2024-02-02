@@ -1,4 +1,4 @@
-package com.iscas.autoCanary.model.domain;
+package com.iscas.autoCanary.pojo;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;

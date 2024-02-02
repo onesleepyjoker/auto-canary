@@ -1,6 +1,6 @@
 package com.iscas.autoCanary.service;
 
-import com.iscas.autoCanary.model.domain.User;
+import com.iscas.autoCanary.pojo.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import javax.servlet.http.HttpServletRequest;

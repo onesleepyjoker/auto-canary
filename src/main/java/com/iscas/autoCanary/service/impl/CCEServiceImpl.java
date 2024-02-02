@@ -17,10 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -220,12 +217,12 @@ public class CCEServiceImpl implements CCEService {
 
 //            更新镜像
             V1Container v1Container = stableDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
-            stableDeployment.getSpec().getTemplate().getSpec().setImagePullSecrets(List.of(new V1LocalObjectReference().name(SECRET_NAME)));
+            stableDeployment.getSpec().getTemplate().getSpec().setImagePullSecrets(Arrays.asList(new V1LocalObjectReference().name(SECRET_NAME)));
             v1Container.setImage(imagesURL);//可以填写第三方库镜像的网址
             System.out.println("成功更新镜像");
 
             // 更新 deployment
-            stableDeployment.getSpec().getTemplate().getSpec().setContainers(List.of(v1Container));
+            stableDeployment.getSpec().getTemplate().getSpec().setContainers(Arrays.asList(v1Container));
             appsV1Api.replaceNamespacedDeployment(deploymentName, "default", stableDeployment, null, null, null, null);
             return 1;
     }
@@ -274,7 +271,7 @@ public class CCEServiceImpl implements CCEService {
         V1StatefulSet stableStatefulSet = appsV1Api.readNamespacedStatefulSet(statefulSetName, NAMESPACE, null);
         V1Container v1Container = stableStatefulSet.getSpec().getTemplate().getSpec().getContainers().get(0);
 //            将新的镜像和拉取镜像的secret策略set进去
-        stableStatefulSet.getSpec().getTemplate().getSpec().setImagePullSecrets(List.of(new V1LocalObjectReference().name(SECRET_NAME)));
+        stableStatefulSet.getSpec().getTemplate().getSpec().setImagePullSecrets(Arrays.asList(new V1LocalObjectReference().name(SECRET_NAME)));
         v1Container.setImage(imagesURL);//填写第三方库镜像的网址  （或者默认填写官方的的镜像名称 nginx：latest）
 //                        更新statefulset
         appsV1Api.replaceNamespacedStatefulSet(statefulSetName, NAMESPACE, stableStatefulSet, null, null, null, null);
@@ -321,11 +318,23 @@ public class CCEServiceImpl implements CCEService {
 
     public List<String> getDeploymentList() throws ApiException {
         AppsV1Api appsV1Api = new AppsV1Api();
-        V1DeploymentList v1DeploymentList = appsV1Api.listDeploymentForAllNamespaces(null, null,
+        V1DeploymentList v1DeploymentList = appsV1Api.listNamespacedDeployment(NAMESPACE, null,
                 null, null, null, null,
-                null, null, null,
-                null, null);
+                null, null,null,null,
+                null,null);
         List<String> deploymentList = v1DeploymentList.getItems().stream()
+                .map(v1Deployment -> v1Deployment.getMetadata().getName())
+                .collect(Collectors.toList());
+        return deploymentList;
+    }
+
+    public List<String> getStatefulSetList() throws ApiException {
+        AppsV1Api appsV1Api = new AppsV1Api();
+        V1StatefulSetList v1StatefulSetList = appsV1Api.listNamespacedStatefulSet(
+                NAMESPACE, null, null, null,
+                null, null, null, null,
+                null, null, null,null);
+        List<String> deploymentList = v1StatefulSetList.getItems().stream()
                 .map(v1Deployment -> v1Deployment.getMetadata().getName())
                 .collect(Collectors.toList());
         return deploymentList;
