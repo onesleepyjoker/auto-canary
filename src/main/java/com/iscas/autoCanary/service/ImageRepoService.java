@@ -9,6 +9,5 @@ import java.util.List;
 import java.util.Map;
 
 
-public interface ImageRepoService {
-    BaseResponse<List<ShowReposResp>> getCCEImgList(String namespace);
+public interface ImageRepoService { List<ShowReposResp> getCCEImgList(String namespace);
 }

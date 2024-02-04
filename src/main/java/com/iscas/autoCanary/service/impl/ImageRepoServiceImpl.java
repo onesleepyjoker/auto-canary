@@ -27,7 +27,7 @@ public class ImageRepoServiceImpl implements ImageRepoService {
     SwrClient swrClient;
 
     @Override
-    public BaseResponse<List<ShowReposResp>> getCCEImgList(String namespace) {
+    public List<ShowReposResp> getCCEImgList(String namespace) {
         ListReposDetailsRequest request = new ListReposDetailsRequest();
         if(namespace!=null){
             request.withNamespace(namespace);
@@ -48,6 +48,6 @@ public class ImageRepoServiceImpl implements ImageRepoService {
                 imgInfo.setStatus(null);
                 return imgInfo;
         }).collect(Collectors.toList());
-        return ResultUtils.success(res);
+        return res;
     }
 }

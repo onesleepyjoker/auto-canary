@@ -22,14 +22,14 @@ public class ImageRepoController {
     @Resource
     ImageRepoService imageRepoService;
 
-    @GetMapping("/getCCEImgList")
+    @GetMapping("/getSWRImgList")
     public BaseResponse<List<ShowReposResp>> getCCEImgList(HttpServletRequest request, String namespace) {
         Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
         User currentUser = (User) userObj;
         if (currentUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
-        return imageRepoService.getCCEImgList(namespace);
+        return ResultUtils.success(imageRepoService.getCCEImgList(namespace));
     }
 
     //    解析列表返回前端
@@ -40,8 +40,8 @@ public class ImageRepoController {
         if (currentUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
-        BaseResponse<List<ShowReposResp>> cceImgList = imageRepoService.getCCEImgList(namespace);
-        List<ShowReposResp> data = cceImgList.getData();
+        List<ShowReposResp> cceImgList = imageRepoService.getCCEImgList(namespace);
+        List<ShowReposResp> data = cceImgList;
         List<String> list = data.stream().map(showReposResp -> {
             StringBuilder stringBuilder = new StringBuilder();
             for (String tag : showReposResp.getTags()) {

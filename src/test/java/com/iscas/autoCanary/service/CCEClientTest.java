@@ -2,8 +2,11 @@ package com.iscas.autoCanary.service;
 
 
 import cn.hutool.core.lang.UUID;
+import com.google.gson.Gson;
+import com.huaweicloud.sdk.swr.v2.model.ShowReposResp;
 import com.iscas.autoCanary.common.ErrorCode;
 import com.iscas.autoCanary.exception.BusinessException;
+import com.iscas.autoCanary.pojo.Image;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
@@ -20,6 +23,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.xml.bind.annotation.XmlType;
 import java.io.*;
 import java.sql.SQLOutput;
 import java.util.*;
@@ -40,6 +44,9 @@ public class CCEClientTest {
     final String CANARY_HEADER_TEST_PATTERN = "^tester$";
     final String CANARY_HEADER_NORMAL_PATTERN = "^(new|tester)$";
     final String STABLE_HEADER_PATTERN = "^tester$";
+
+    @Autowired
+    private ImageRepoService imageRepoService;
 
     /**
      * 获取ingress的注解
@@ -347,7 +354,7 @@ public class CCEClientTest {
             V1Container v1Container = stableDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
             System.out.println(v1Container);
             v1Container.setImage("nginx:latest");
-            stableDeployment.getSpec().getTemplate().getSpec().setContainers(List.of(v1Container));
+            stableDeployment.getSpec().getTemplate().getSpec().setContainers(Arrays.asList(v1Container));
 //            getSpec就是获取到前面对象的标准对象，每次拿到一个对象之后都需要调用这个方法
             appsV1Api.replaceNamespacedDeployment("project", "default", stableDeployment, null, null, null, null);
 
@@ -425,6 +432,14 @@ public class CCEClientTest {
     void testReadyaml(){
         System.out.println("secret name: " + SECRET_NAME);
         System.out.println(UUID.fastUUID().toString());
+    }
+
+    @Test
+    void createimage() {
+//        获取华为云仓库当中的所有镜像列表
+        List<ShowReposResp> cceImgList = imageRepoService.getCCEImgList(null);
+        System.out.println(cceImgList.get(0).getUrl());
+        System.out.println(cceImgList.get(0).getPath());
     }
 
 }
