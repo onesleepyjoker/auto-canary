@@ -63,8 +63,9 @@ public class Image implements Serializable {
     /**
      * 创建镜像的用户id
      */
-    private Integer userId;
+    private Long userId;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
+
 }
