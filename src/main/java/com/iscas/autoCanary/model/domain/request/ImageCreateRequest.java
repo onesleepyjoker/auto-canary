@@ -13,6 +13,8 @@ import java.util.Date;
 @Data
 public class ImageCreateRequest implements Serializable {
 
+//    镜像id
+    private Long id;
     /**
      * 镜像名称
      */
