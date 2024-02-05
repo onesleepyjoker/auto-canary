@@ -7,6 +7,7 @@ import io.kubernetes.client.util.KubeConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -25,11 +26,12 @@ public class CCEClientConfig {
     // 用于指定集群endpoint
     private final String CCE_ENDPOINT = "cce.cn-east-3.myhuaweicloud.com";
     @Bean
-    public void cceClient() throws IOException {
+    @Lazy(false)
+    public ApiClient cceClient() throws IOException {
         // 加载 kubeconfig
         String kubeConfigPath = "src/main/resources/static/canary-test-kubeconfig.yaml";
         ApiClient client = ClientBuilder.kubeconfig(KubeConfig.loadKubeConfig(new FileReader(kubeConfigPath))).build();
         io.kubernetes.client.openapi.Configuration.setDefaultApiClient(client);
-
+        return client;
     }
 }

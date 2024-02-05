@@ -25,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.xml.bind.annotation.XmlType;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLOutput;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -440,6 +441,23 @@ public class CCEClientTest {
         List<ShowReposResp> cceImgList = imageRepoService.getCCEImgList(null);
         System.out.println(cceImgList.get(0).getUrl());
         System.out.println(cceImgList.get(0).getPath());
+    }
+
+    @Test
+    void readSecret(){
+        CoreV1Api coreV1Api = new CoreV1Api();
+        V1Secret secret = new V1Secret();
+        try {
+            secret = coreV1Api.readNamespacedSecret("swr-secret", "default", null);
+            System.out.println(secret.getData());
+        } catch (ApiException e) {
+            throw new RuntimeException(e);
+        }
+// 从 Secret 中获取 AK 和 SK 的值
+        String ak = new String(secret.getData().get("HUAWEICLOUD_SDK_AK"), StandardCharsets.UTF_8);
+        String sk = new String(secret.getData().get("HUAWEICLOUD_SDK_SK"), StandardCharsets.UTF_8);
+        System.out.println(ak);
+        System.out.println(sk);
     }
 
 }

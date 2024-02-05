@@ -316,6 +316,7 @@ public class CCEServiceImpl implements CCEService {
         System.out.println("Secret created successfully");
     }
 
+//        查询deployment信息拿到列表 （查）
     public List<String> getDeploymentList() throws ApiException {
         AppsV1Api appsV1Api = new AppsV1Api();
         V1DeploymentList v1DeploymentList = appsV1Api.listNamespacedDeployment(NAMESPACE, null,
@@ -328,6 +329,7 @@ public class CCEServiceImpl implements CCEService {
         return deploymentList;
     }
 
+//            查询statefulset信息拿到列表  （查）
     public List<String> getStatefulSetList() throws ApiException {
         AppsV1Api appsV1Api = new AppsV1Api();
         V1StatefulSetList v1StatefulSetList = appsV1Api.listNamespacedStatefulSet(

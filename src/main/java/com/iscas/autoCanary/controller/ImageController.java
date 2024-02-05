@@ -2,7 +2,6 @@ package com.iscas.autoCanary.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.huaweicloud.sdk.swr.v2.model.ShowReposResp;
 import com.iscas.autoCanary.common.BaseResponse;
 import com.iscas.autoCanary.common.DeleteRequest;
 import com.iscas.autoCanary.common.ErrorCode;
@@ -110,7 +109,8 @@ public class ImageController {
         }
         Image image = new Image();
         BeanUtils.copyProperties(imageQuery,image);
-        Page<Image> imagePage = imageService.page(new Page<>(pageNum, pageSize),
+        Page<Image> imagePage = imageService.page(new Page<>(
+                pageNum, pageSize),
                 new QueryWrapper<>(image));
         return ResultUtils.success(imagePage);
     }
