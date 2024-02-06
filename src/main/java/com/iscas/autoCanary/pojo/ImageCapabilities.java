@@ -4,15 +4,17 @@ import com.baomidou.mybatisplus.annotation.*;
 
 import java.io.Serializable;
 import java.util.Date;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 /**
  * 镜像关系表
  * @TableName imagecapabilities
  */
-@TableName(value ="imagecapabilities")
+@TableName(value ="imageCapabilities")
 @Data
-public class Imagecapabilities implements Serializable {
+public class ImageCapabilities implements Serializable {
     /**
      * id
      */
@@ -20,9 +22,9 @@ public class Imagecapabilities implements Serializable {
     private Long id;
 
     /**
-     * 是否可用
+     * 对该标记的描述
      */
-    private Integer imageStatus;
+    private String description;
 
     /**
      * 镜像版本数据
@@ -32,11 +34,13 @@ public class Imagecapabilities implements Serializable {
     /**
      * 创建时间
      */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
     private Date createTime;
 
     /**
      * 修改时间
      */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
     private Date updateTime;
 
     /**

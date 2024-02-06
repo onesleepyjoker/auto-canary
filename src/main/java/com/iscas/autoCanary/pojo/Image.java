@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.annotation.*;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.Objects;
+
 import lombok.Data;
 
 /**
@@ -68,4 +70,21 @@ public class Image implements Serializable {
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 
+    /**
+     * 对象去重
+     * @param o
+     * @return
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Image image = (Image) o;
+        return Objects.equals(imageName, image.imageName) && Objects.equals(version, image.version);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(imageName, version);
+    }
 }
