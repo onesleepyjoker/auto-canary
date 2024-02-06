@@ -17,7 +17,11 @@ public enum ErrorCode {
     NOT_LOGIN(40100, "未登录", ""),
     NO_AUTH(40101, "无权限", ""),
     CREATE_ERROR(40002, "重复创建", ""),
-    SYSTEM_ERROR(50000, "系统内部异常", "");
+    SYSTEM_ERROR(50000, "系统内部异常", ""),
+    NO_IMAGES(60001,"没有相关image资源",""),
+    VERSION_MAPPING_NUM_LACK(60002,"传入image版本映射小于2",""),
+    VERSION_MAPPING_EXIST(60003,"重复插入",""),
+    NO_VERSION_MAPPING(60004,"没有对应的imageMapping记录","");
 
 
     private final int code;

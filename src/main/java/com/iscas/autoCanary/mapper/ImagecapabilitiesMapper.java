@@ -1,6 +1,6 @@
 package com.iscas.autoCanary.mapper;
 
-import com.iscas.autoCanary.pojo.Imagecapabilities;
+import com.iscas.autoCanary.pojo.ImageCapabilities;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
@@ -9,7 +9,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 * @createDate 2024-02-02 09:48:54
 * @Entity com.iscas.autoCanary.pojo.Imagecapabilities
 */
-public interface ImagecapabilitiesMapper extends BaseMapper<Imagecapabilities> {
+public interface ImagecapabilitiesMapper extends BaseMapper<ImageCapabilities> {
 
 }
 

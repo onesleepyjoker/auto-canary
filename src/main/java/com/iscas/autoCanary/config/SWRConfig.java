@@ -25,10 +25,10 @@ import java.util.Map;
 
 @Configuration
 public class SWRConfig {
-    @Value("${HUAWEICLOUD_SDK_AK}")
-    String ak;
-    @Value("${HUAWEICLOUD_SDK_SK}")
-    String sk;
+//    @Value("${HUAWEICLOUD_SDK_AK}")
+//    String ak;
+//    @Value("${HUAWEICLOUD_SDK_SK}")
+//    String sk;
 
     String NAMESPACE="default";
 
@@ -52,7 +52,7 @@ public class SWRConfig {
     @Bean
     public SwrClient swrClient(ApiClient apiClient) {
         CoreV1Api coreV1Api = new CoreV1Api();
-        V1Secret secret = new V1Secret();
+        V1Secret secret;
         try {
             secret = coreV1Api.readNamespacedSecret("swr-secret", "default", null);
             System.out.println(secret.getData());
@@ -62,8 +62,6 @@ public class SWRConfig {
 // 从 Secret 中获取 AK 和 SK 的值
         String ak = new String(secret.getData().get("HUAWEICLOUD_SDK_AK"), StandardCharsets.UTF_8);
         String sk = new String(secret.getData().get("HUAWEICLOUD_SDK_SK"), StandardCharsets.UTF_8);
-        System.out.println(ak);
-        System.out.println(sk);
 
 // 在应用程序中使用 AK 和 SK
         ICredential auth = new BasicCredentials()

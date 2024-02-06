@@ -4,7 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.iscas.autoCanary.mapper.ImagecapabilitiesMapper">
 
-    <resultMap id="BaseResultMap" type="com.iscas.autoCanary.pojo.Imagecapabilities">
+    <resultMap id="BaseResultMap" type="com.iscas.autoCanary.pojo.ImageCapabilities">
             <id property="id" column="id" jdbcType="BIGINT"/>
             <result property="imageStatus" column="imageStatus" jdbcType="INTEGER"/>
             <result property="imageList" column="imageList" jdbcType="VARCHAR"/>

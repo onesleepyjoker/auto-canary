@@ -27,6 +27,8 @@ import javax.xml.bind.annotation.XmlType;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLOutput;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -355,7 +357,7 @@ public class CCEClientTest {
             V1Container v1Container = stableDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
             System.out.println(v1Container);
             v1Container.setImage("nginx:latest");
-            stableDeployment.getSpec().getTemplate().getSpec().setContainers(Arrays.asList(v1Container));
+//            stableDeployment.getSpec().getTemplate().getSpec().setContainers(List.of(v1Container));
 //            getSpec就是获取到前面对象的标准对象，每次拿到一个对象之后都需要调用这个方法
             appsV1Api.replaceNamespacedDeployment("project", "default", stableDeployment, null, null, null, null);
 
