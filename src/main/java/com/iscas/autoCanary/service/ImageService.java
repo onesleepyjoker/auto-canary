@@ -28,7 +28,7 @@ public interface ImageService extends IService<Image> {
     List<Image> listImages(ImageQuery imageQuery);
 
     //    镜像添加
-    long createImage(Image image, User userLogin);
+    long  createImage(Image image, User userLogin);
 
     //    镜像删除
     boolean deleteImage(long id, User userLogin);

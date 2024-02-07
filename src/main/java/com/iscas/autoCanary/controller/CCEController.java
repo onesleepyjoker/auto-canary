@@ -7,6 +7,7 @@ import com.iscas.autoCanary.common.ResultUtils;
 import com.iscas.autoCanary.contant.UserConstant;
 import com.iscas.autoCanary.exception.BusinessException;
 import com.iscas.autoCanary.pojo.User;
+import com.iscas.autoCanary.pojo.output.ImageOutput;
 import com.iscas.autoCanary.service.CCEService;
 import com.iscas.autoCanary.service.UserService;
 import io.kubernetes.client.openapi.ApiException;
@@ -365,5 +366,24 @@ public class CCEController {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR,"获取deployment列表失败，请稍后重试");
         }
         return ResultUtils.success(deploymentList);
+    }
+
+//    返回当前正在运行的所有镜像列表
+    @GetMapping("/image/list")
+    public BaseResponse<List<ImageOutput>> listImage(HttpServletRequest request) {
+        Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
+        User currentUser = (User) userObj;
+        if (currentUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+
+        List<ImageOutput> imageList = null;
+        try {
+            imageList = cceService.getImageList();
+        } catch (ApiException e) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR,"获取image列表失败，请稍后重试");
+        }
+
+        return ResultUtils.success(imageList);
     }
 }

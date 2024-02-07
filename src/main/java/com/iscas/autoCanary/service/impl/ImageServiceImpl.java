@@ -156,7 +156,6 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image>
         if (!b){
             throw new BusinessException(ErrorCode.SYSTEM_ERROR,"删除镜像失败");
         }
-//        todo 在删除镜像的同时还需要删除其在镜像关系表里面的镜像标记
         return b;
     }
 

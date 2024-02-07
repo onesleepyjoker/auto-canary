@@ -3,6 +3,7 @@ package com.iscas.autoCanary.service.impl;
 import com.fasterxml.jackson.core.SerializableString;
 import com.iscas.autoCanary.common.ErrorCode;
 import com.iscas.autoCanary.exception.BusinessException;
+import com.iscas.autoCanary.pojo.output.ImageOutput;
 import com.iscas.autoCanary.service.CCEService;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
@@ -341,5 +342,47 @@ public class CCEServiceImpl implements CCEService {
                 .collect(Collectors.toList());
         return deploymentList;
     }
+
+//    获取到所有正在运行的镜像列表
+    @Override
+    public List<ImageOutput> getImageList() throws ApiException {
+        AppsV1Api appsV1Api=new AppsV1Api();
+//        获取到所有的有状态负载 （运行当中）
+        V1StatefulSetList v1StatefulSetList = appsV1Api.listNamespacedStatefulSet(
+                NAMESPACE, null, null, null,
+                null, null, null, null,
+                null, null, null,null);
+//        获取到所有的无状态负载 （没有运行当中的负载不会出现在k8s当中）
+        V1DeploymentList v1DeploymentList = appsV1Api.listNamespacedDeployment(NAMESPACE, null,
+                null, null, null, null,
+                null, null,null,null,
+                null,null);
+
+        ArrayList<ImageOutput> list = new ArrayList<>();
+        for (V1Deployment item : v1DeploymentList.getItems()) {
+            List<V1Container> containers = item.getSpec().getTemplate().getSpec().getContainers();
+            for (V1Container container : containers) {
+                String image = container.getImage();//rabbitmq：3.12
+                String[] split = image.split(":", 2);
+                ImageOutput imageOutput = new ImageOutput();
+                imageOutput.setImageName(split[0]);
+                imageOutput.setVersion(split[1]);
+                list.add(imageOutput);
+            }
+        }
+        for (V1StatefulSet item : v1StatefulSetList.getItems()) {
+            List<V1Container> containers = item.getSpec().getTemplate().getSpec().getContainers();
+            for (V1Container container : containers) {
+                String image = container.getImage();//rabbitmq：3.12
+                String[] split = image.split(":", 2);
+                ImageOutput imageOutput = new ImageOutput();
+                imageOutput.setImageName(split[0]);
+                imageOutput.setVersion(split[1]);
+                list.add(imageOutput);
+            }
+        }
+        return list;
+    }
+
 
 }

@@ -1,5 +1,6 @@
 package com.iscas.autoCanary.service;
 
+import com.iscas.autoCanary.pojo.output.ImageOutput;
 import io.kubernetes.client.openapi.ApiException;
 
 import java.io.File;
@@ -47,4 +48,6 @@ public interface CCEService {
 //    获取statefulSet列表
     public List<String> getStatefulSetList() throws ApiException;
 
+//    获取所有namespace当中的pod列表里面的镜像列表
+    public List<ImageOutput> getImageList() throws ApiException;
 }
