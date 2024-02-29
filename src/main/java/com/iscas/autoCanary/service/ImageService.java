@@ -39,5 +39,8 @@ public interface ImageService extends IService<Image> {
     //    拼接查询语句
     QueryWrapper<Image> getQueryWrapper(ImageQuery imageQuery);
 
+//    查询镜像的类型（有负载还是无负载）
+    String getImageType(long id);
+
 
 }
