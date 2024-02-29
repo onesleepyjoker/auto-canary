@@ -57,6 +57,11 @@ public class Image implements Serializable {
     private Date updateTime;
 
     /**
+     * 配置文件
+     */
+    private String yaml;
+
+    /**
      * 是否删除
      */
     @TableLogic

@@ -51,10 +51,28 @@ create table imageCapabilities
 (
     id bigint auto_increment comment 'id'
         primary key,
-    description varchar(255) null comment '是否可用',
+    description varchar(255) null comment '描述',
     imageList varchar(1024) null comment '镜像版本数据',
     createTime datetime default CURRENT_TIMESTAMP null comment '创建时间',
     updateTime datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
     isDelete tinyint default 0 not null comment '是否删除',
     userId int default 0 not null comment '创建镜像关系的用户id'
 ) comment '镜像关系表';
+
+
+
+
+
+create table task
+(
+    id bigint auto_increment comment 'id'
+        primary key,
+    description varchar(255) null comment '描述',
+    isSuccess tinyint default 0 not null comment '是否成功',
+    logInformation varchar(255) null comment '日志信息',
+    imageList varchar(1024) null comment '镜像版本数据',
+    createTime datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    updateTime datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
+    isDelete tinyint default 0 not null comment '是否删除',
+    userId int default 0 not null comment '创建镜像关系的用户id'
+) comment '任务表';

@@ -16,6 +16,7 @@ import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.Config;
 import io.kubernetes.client.util.KubeConfig;
 import io.kubernetes.client.util.Yaml;
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -460,6 +461,38 @@ public class CCEClientTest {
         String sk = new String(secret.getData().get("HUAWEICLOUD_SDK_SK"), StandardCharsets.UTF_8);
         System.out.println(ak);
         System.out.println(sk);
+    }
+
+//    根据yaml配置文件读取对应的kind的值，判断负载的类型
+    @Autowired
+    private ImageService imageService;
+    @Test
+    void getkind() throws IOException {
+
+        String stringYaml = imageService.getById(1).getYaml();
+        org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml();
+        Map<String, Object> yamlData = (Map<String, Object>) yaml.load(stringYaml);
+
+        String kind = (String) yamlData.get("kind");
+        System.out.println(kind);
+
+        V1Deployment v1Deployment = (V1Deployment) Yaml.load(stringYaml);
+
+
+    }
+
+    @SneakyThrows
+    @Test
+    void getdeployment(){
+        AppsV1Api appsV1Api = new AppsV1Api();
+        Map<Long, String> res = new HashMap<>();
+//        获取标签为new 的有状态负载 （运行当中）
+        V1StatefulSetList v1StatefulSetList = appsV1Api.listNamespacedStatefulSet(
+                NAMESPACE, null, null, null,
+                null, "version=new", null, null,
+                null, null, null, null);
+        List<V1StatefulSet> list = v1StatefulSetList.getItems();
+        System.out.println(list);
     }
 
 }

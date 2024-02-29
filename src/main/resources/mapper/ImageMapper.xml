@@ -15,12 +15,13 @@
             <result property="updateTime" column="updateTime" jdbcType="TIMESTAMP"/>
             <result property="isDelete" column="isDelete" jdbcType="TINYINT"/>
             <result property="userId" column="userId" jdbcType="INTEGER"/>
+            <result property="yaml" column="yaml" jdbcType="VARCHAR"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id,imageName,version,
         namespace,imageStatus,imageUrl,
         createTime,updateTime,isDelete,
-        userId
+        userId,yaml
     </sql>
 </mapper>

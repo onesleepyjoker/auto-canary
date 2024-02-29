@@ -21,6 +21,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -53,7 +54,7 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image>
                 imageQuery.setImageName(showReposResp.getName());
                 imageQuery.setNamespace(showReposResp.getNamespace());
                 imageQuery.setVersion(tag);
-                imageQuery.setImageURL(showReposResp.getPath());
+                imageQuery.setImageURL(showReposResp.getPath()+":"+tag);
                 List<Image> images = this.listImages(imageQuery);
 //                如果查不到对应的数据说明数据库中没有该镜像 加入镜像
                 if (images.isEmpty()) {
@@ -63,7 +64,7 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image>
                     image.setNamespace(showReposResp.getNamespace());
                     image.setVersion(tag);
                     image.setUserId(loginUser.getId());
-                    image.setImageUrl(showReposResp.getPath());
+                    image.setImageUrl(showReposResp.getPath()+":"+tag);
                     this.save(image);
                     num.getAndIncrement();
                 }
@@ -220,6 +221,16 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image>
             }
         }
         return queryWrapper;
+    }
+
+    public String getImageType(long id){
+        String stringYaml = this.getById(id).getYaml();
+        org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml();
+        Map<String, Object> yamlData = (Map<String, Object>) yaml.load(stringYaml);
+
+        String kind = (String) yamlData.get("kind");
+        System.out.println(kind);
+        return kind;
     }
 }
 
