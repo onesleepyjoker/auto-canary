@@ -3,7 +3,9 @@ package com.iscas.autoCanary.service;
 import com.iscas.autoCanary.pojo.Image;
 import com.iscas.autoCanary.pojo.ImageCapabilities;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.iscas.autoCanary.pojo.output.ImageOutput;
 import com.iscas.autoCanary.pojo.output.MarkLineOutput;
+import io.kubernetes.client.openapi.ApiException;
 
 import java.util.List;
 
@@ -36,4 +38,6 @@ public interface ImageCapabilitiesService extends IService<ImageCapabilities> {
      * @return
      */
     List<MarkLineOutput> getMark(Long imageId);
+
+    List<ImageOutput> getIncompatibleVersion(Long imageId) throws ApiException;
 }
