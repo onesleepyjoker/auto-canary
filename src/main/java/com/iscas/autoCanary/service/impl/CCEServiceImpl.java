@@ -2,9 +2,12 @@ package com.iscas.autoCanary.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.core.SerializableString;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.iscas.autoCanary.common.ErrorCode;
 import com.iscas.autoCanary.exception.BusinessException;
 import com.iscas.autoCanary.pojo.Image;
+import com.iscas.autoCanary.pojo.Task;
 import com.iscas.autoCanary.pojo.output.ImageOutput;
 import com.iscas.autoCanary.service.CCEService;
 import com.iscas.autoCanary.service.ImageService;
@@ -23,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -52,6 +56,9 @@ public class CCEServiceImpl implements CCEService {
 
     @Autowired
     private TaskService taskService;
+
+    @Autowired
+    private UserService userService;
 
 
     /**
@@ -489,16 +496,16 @@ public class CCEServiceImpl implements CCEService {
         return 1;
     }
 
-//    模拟点火测试的接口方法
+    //    模拟点火测试的接口方法
     @Override
     public boolean fireTest() throws InterruptedException {
         Thread.sleep(5000);
         return true;
     }
 
-//    返回所有标签为new的正在运行的镜像id和镜像url
+    //    返回所有标签为new的正在运行的镜像id和镜像url
     @Override
-    public Map<Long,String> NewImageList() throws ApiException {
+    public Map<Long, String> NewImageList() throws ApiException {
         AppsV1Api appsV1Api = new AppsV1Api();
         Map<Long, String> res = new HashMap<>();
 //        获取标签为new 的有状态负载 （运行当中）
@@ -517,21 +524,21 @@ public class CCEServiceImpl implements CCEService {
             for (V1Container container : containers) {//一个负载会有多个镜像容器
                 String imageUrl = container.getImage();//swr.cn-east-3.myhuaweicloud.com/isrc-test-develop-shanghai/rabbitmq:3.12-management
                 QueryWrapper<Image> queryWrapper = new QueryWrapper<>();//根据镜像名称和版本查询镜像id
-                queryWrapper.eq(imageUrl!=null,"imageUrl",imageUrl);//直接根据url来查询id
+                queryWrapper.eq(imageUrl != null, "imageUrl", imageUrl);//直接根据url来查询id
                 Image newImage = imageService.getOne(queryWrapper);
-                if (newImage==null){
-                    throw new BusinessException(ErrorCode.PARAMS_ERROR,"查不到灰度版本的镜像信息");
+                if (newImage == null) {
+                    throw new BusinessException(ErrorCode.PARAMS_ERROR, "查不到灰度版本的镜像信息");
                 }
                 Long id = newImage.getId();
-                res.put(id,newImage.getImageUrl());
+                res.put(id, newImage.getImageUrl());
             }
         }
         return res;
     }
 
-//      返回标签为old的镜像id和镜像url
+    //      返回标签为old的镜像id和镜像url
     @Override
-    public Map<Long,String> oldImageList() throws ApiException {
+    public Map<Long, String> oldImageList() throws ApiException {
         AppsV1Api appsV1Api = new AppsV1Api();
         Map<Long, String> res = new HashMap<>();
 //        获取标签为new 的有状态负载 （运行当中）
@@ -550,13 +557,13 @@ public class CCEServiceImpl implements CCEService {
             for (V1Container container : containers) {//一个负载会有多个镜像容器
                 String imageUrl = container.getImage();//swr.cn-east-3.myhuaweicloud.com/isrc-test-develop-shanghai/rabbitmq:3.12-management
                 QueryWrapper<Image> queryWrapper = new QueryWrapper<>();//根据镜像名称和版本查询镜像id
-                queryWrapper.eq(imageUrl!=null,"imageUrl",imageUrl);//直接根据url来查询id
+                queryWrapper.eq(imageUrl != null, "imageUrl", imageUrl);//直接根据url来查询id
                 Image newImage = imageService.getOne(queryWrapper);
-                if (newImage==null){
-                    throw new BusinessException(ErrorCode.PARAMS_ERROR,"查不到灰度版本的镜像信息");
+                if (newImage == null) {
+                    throw new BusinessException(ErrorCode.PARAMS_ERROR, "查不到灰度版本的镜像信息");
                 }
                 Long id = newImage.getId();
-                res.put(id,newImage.getImageUrl());
+                res.put(id, newImage.getImageUrl());
             }
         }
         return res;
@@ -564,7 +571,7 @@ public class CCEServiceImpl implements CCEService {
 
     //    返回所有标签为new的正在运行的镜像id和服务名称
     @Override
-    public Map<Long,String> oldImageListAndDeploymentName() throws ApiException {
+    public Map<Long, String> oldImageListAndDeploymentName() throws ApiException {
         AppsV1Api appsV1Api = new AppsV1Api();
         Map<Long, String> res = new HashMap<>();
 
@@ -581,19 +588,19 @@ public class CCEServiceImpl implements CCEService {
                 QueryWrapper<Image> queryWrapper = new QueryWrapper<>();//根据镜像名称和版本查询镜像id
                 queryWrapper.eq("imageUrl", imageUrl);
                 Image newImage = imageService.getOne(queryWrapper);
-                if (newImage == null){
-                    throw new BusinessException(ErrorCode.SYSTEM_ERROR,"数据库中没有该镜像");
+                if (newImage == null) {
+                    throw new BusinessException(ErrorCode.SYSTEM_ERROR, "数据库中没有该镜像");
                 }
                 Long id = newImage.getId();
-                res.put(id,item.getMetadata().getName());
+                res.put(id, item.getMetadata().getName());
             }
         }
         return res;
     }
 
-//    返回标签为new的无状态负载的镜像id和负载名称
+    //    返回标签为new的无状态负载的镜像id和负载名称
     @Override
-    public Map<Long,String> newImageListAndDeploymentName() throws ApiException {
+    public Map<Long, String> newImageListAndDeploymentName() throws ApiException {
         AppsV1Api appsV1Api = new AppsV1Api();
         Map<Long, String> res = new HashMap<>();
 
@@ -610,13 +617,439 @@ public class CCEServiceImpl implements CCEService {
                 QueryWrapper<Image> queryWrapper = new QueryWrapper<>();//根据镜像名称和版本查询镜像id
                 queryWrapper.eq("imageUrl", imageUrl);
                 Image newImage = imageService.getOne(queryWrapper);
-                if (newImage == null){
-                    throw new BusinessException(ErrorCode.SYSTEM_ERROR,"数据库中没有该镜像");
+                if (newImage == null) {
+                    throw new BusinessException(ErrorCode.SYSTEM_ERROR, "数据库中没有该镜像");
                 }
                 Long id = newImage.getId();
-                res.put(id,item.getMetadata().getName());
+                res.put(id, item.getMetadata().getName());
             }
         }
         return res;
     }
+
+    //    回滚灰度集群的负载镜像，将回滚信息记录到日志当中
+    @Override
+    public long latestRollback(Task task, List<Long> imageIdList) {
+
+//            如果是new的话表示需要获取到所有tag为new的负载名称和对应的镜像id，然后根据镜像id部署指定版本的将镜像
+        Map<Long, String> newList = new HashMap<>();
+        try {
+            Map<Long, String> map = this.newImageListAndDeploymentName();
+        } catch (ApiException e) {
+            task.setLogInformation("无法读取当前灰度版本的镜像信息");
+            task.setIsSuccess(1);
+            taskService.save(task);
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "无法读取当前灰度版本的镜像信息");
+        }
+
+//          3.根据获取到的负载信息匹配对应的指定版本镜像
+        Map<String, String> map = new HashMap<>();
+        for (Map.Entry<Long, String> entry : newList.entrySet()) {
+            String deploymentName = entry.getValue();
+            Long newImageId = entry.getKey();
+            for (Long imageId : imageIdList) {
+                if (imageId.equals(newImageId)) {
+                    map.put(deploymentName, imageId.toString());
+                }
+            }
+        }
+        String logInformation1 = task.getLogInformation();
+        task.setLogInformation(logInformation1 + "     " + "2.根据获取到的负载信息匹配对应的指定版本镜像");
+        //        4.切断灰度版本的流量  变成tester
+        try {
+            this.cutCanaryFlow();
+        } catch (ApiException e) {
+            String logInformation = task.getLogInformation();
+            task.setLogInformation(logInformation + "     " + "切断灰度版本的流量失败，回滚失败");
+            task.setIsSuccess(1);//1代表任务失败
+            taskService.save(task);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "切断灰度版本的流量失败，请稍后重试");
+        }
+        String logInformation2 = task.getLogInformation();
+        task.setLogInformation(logInformation2 + "     " + "3.切断灰度版本的流量成功");
+
+        //  5.根据服务名称和镜像URL替换镜像版本
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            String serviceName = entry.getKey();
+            String imageUrl = entry.getValue();
+            try {
+                this.updateDeployment(serviceName, imageUrl);
+            } catch (ApiException e) {
+                String logInformation = task.getLogInformation();
+                task.setLogInformation(logInformation + "  " + "更新deployment失败，灰度版发布失败");
+                task.setIsSuccess(1);//1代表任务失败
+                taskService.save(task);
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新deployment失败，请检查服务名称是否正确稍后重试");
+            }
+        }
+
+//        6.镜像部署完成进行点火测试
+        String s = task.getLogInformation();
+        task.setLogInformation(s + "     " + "4.镜像部署完成，开始进行点火测试");
+        Boolean flag = null;
+        while (flag == null) {
+            try {
+                flag = this.fireTest();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            if (flag == null) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    throw new BusinessException(ErrorCode.SYSTEM_ERROR, "轮询失败");
+                }
+            } else if (flag == false) {
+                task.setLogInformation("点火测试失败，请稍后重试");
+                task.setIsSuccess(1);
+                break;
+            } else {
+                String information = task.getLogInformation();
+                task.setLogInformation(information + "  " + "点火测试通过");
+            }
+        }
+
+        //  7.灰度版本测试通过，进行流量切换，支持灰度版本的内测用户
+        if (flag != null && flag) {
+            String information = task.getLogInformation();
+            task.setLogInformation(information + "     " + "5.灰度版本测试通过，开始回滚");
+            try {
+                this.resumeCanaryFlow();
+            } catch (ApiException e) {
+                String logInformation = task.getLogInformation();
+                task.setLogInformation(logInformation + "  " + "流量更新失败，回滚失败");
+                task.setIsSuccess(1);
+                taskService.save(task);
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "流量更新失败，回滚失败");
+            }
+        }
+        String logInformation = task.getLogInformation();
+        task.setLogInformation(logInformation + "  " + "6.流量切换成功,回滚！！！");
+        task.setIsSuccess(0);
+        taskService.save(task);
+        return task.getId();
+    }
+
+    @Override
+    public long stableRollback(Task task, List<Long> imageIdList) {
+
+        //            如果是old的话表示需要获取到所有tag为old的负载名称和对应的镜像id，然后根据镜像id部署指定版本的将镜像
+        Map<Long, String> newList = new HashMap<>();
+        try {
+            Map<Long, String> map = this.oldImageListAndDeploymentName();
+        } catch (ApiException e) {
+            task.setLogInformation("无法读取当前灰度版本的镜像信息");
+            task.setIsSuccess(1);
+            taskService.save(task);
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "无法读取当前稳定版本的镜像信息");
+        }
+//          3.根据获取到的负载信息匹配对应的指定版本镜像
+        Map<String, String> map = new HashMap<>();
+        for (Map.Entry<Long, String> entry : newList.entrySet()) {
+            String deploymentName = entry.getValue();
+            Long newImageId = entry.getKey();
+            for (Long imageId : imageIdList) {
+                if (imageId.equals(newImageId)) {
+                    map.put(deploymentName, imageId.toString());
+                }
+            }
+        }
+        String logInformation1 = task.getLogInformation();
+        task.setLogInformation(logInformation1 + "     " + "2.匹配稳定版本镜像成功");
+        //        4.切断灰度版本的流量  变成tester
+        try {
+            this.cutCanaryFlow();
+        } catch (ApiException e) {
+            String logInformation = task.getLogInformation();
+            task.setLogInformation(logInformation + "     " + "切断稳定版本的流量失败，回滚失败");
+            task.setIsSuccess(1);//1代表任务失败
+            taskService.save(task);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "切断稳定版本的流量失败，请稍后重试");
+        }
+        String logInformation2 = task.getLogInformation();
+        task.setLogInformation(logInformation2 + "     " + "3.切断稳定版本的流量成功");
+
+        //  5.根据服务名称和镜像URL替换镜像版本
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            String serviceName = entry.getKey();
+            String imageUrl = entry.getValue();
+            try {
+                this.updateDeployment(serviceName, imageUrl);
+            } catch (ApiException e) {
+                String logInformation = task.getLogInformation();
+                task.setLogInformation(logInformation + "  " + "更新deployment失败，稳定版发布失败");
+                task.setIsSuccess(1);//1代表任务失败
+                taskService.save(task);
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新deployment失败，请检查服务名称是否正确稍后重试");
+            }
+        }
+
+//        6.镜像部署完成进行点火测试
+        String s = task.getLogInformation();
+        task.setLogInformation(s + "     " + "4.镜像部署完成，开始进行点火测试");
+        Boolean flag = null;
+        while (flag == null) {
+            try {
+                flag = this.fireTest();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            if (flag == null) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    throw new BusinessException(ErrorCode.SYSTEM_ERROR, "轮询失败");
+                }
+            } else if (flag == false) {
+                task.setLogInformation("点火测试失败，请稍后重试");
+                task.setIsSuccess(1);
+                break;
+            } else {
+                String information = task.getLogInformation();
+                task.setLogInformation(information + "  " + "点火测试通过");
+            }
+        }
+
+        //  7.灰度版本测试通过，进行流量切换，支持灰度版本的内测用户
+        if (flag != null && flag) {
+            String information = task.getLogInformation();
+            task.setLogInformation(information + "     " + "5.稳定版本测试通过，开始进行回滚");
+            try {
+                this.resumeCanaryFlow();
+            } catch (ApiException e) {
+                String logInformation = task.getLogInformation();
+                task.setLogInformation(logInformation + "  " + "流量更新失败，稳定版发布失败");
+                task.setIsSuccess(1);
+                taskService.save(task);
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "流量更新失败，回滚失败");
+            }
+        }
+        String logInformation = task.getLogInformation();
+        task.setLogInformation(logInformation + "  " + "6.流量切换成功,回滚！！！");
+        task.setIsSuccess(0);
+        taskService.save(task);
+        return task.getId();
+    }
+
+//    稳定版发布业务逻辑
+    public long stableDeploy(HttpServletRequest request){
+        //        0.创建task对象
+        Task task = new Task();
+        task.setDescription("实现稳定版发布");
+        task.setUserId(userService.getLoginUser(request).getId());
+
+        ArrayList<Long> imageList = new ArrayList<>();
+        Map<Long, String> newMap = new HashMap<>();//封装所有灰度版本的镜像map（id和imageUrl）
+
+//        1.获取到所有的镜像id列表存储到task任务当中
+        try {
+            Map<Long,String> map = this.NewImageList();
+            newMap=map;
+            for (Long id : map.keySet()) {
+                imageList.add(id);
+            }
+        } catch (ApiException e) {
+            task.setLogInformation("无法获取到灰度版本镜像列表，稳定版发布失败");
+            task.setIsSuccess(1);
+            taskService.save(task);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "获取镜像列表失败，稳定版本发布失败");
+        }catch (BusinessException e) {
+            task.setLogInformation("无法获取到灰度版本镜像列表，稳定版发布失败");
+            task.setIsSuccess(1);
+            taskService.save(task);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "获取新版镜像列表失败，稳定版本发布失败");
+        }
+        task.setImageList(imageList.toString());
+        task.setLogInformation("1.成功获取到所有新版镜像列表");
+
+
+//        2.获取到所有的稳定版负载的镜像id和负载名称
+        Map<Long, String> oldMap = new HashMap<>();
+        try {
+            Map<Long, String> map = this.oldImageListAndDeploymentName();
+            oldMap = map;
+        } catch (ApiException e) {
+            String logInformation = task.getLogInformation();
+            task.setLogInformation(logInformation+"     "+"无法获取到稳定版负载的镜像id和负载名称，稳定版发布失败");
+            task.setIsSuccess(1);
+            taskService.save(task);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "获取稳定版镜像列表失败，稳定版本发布失败");
+        }
+        String logInformation3 = task.getLogInformation();
+        task.setLogInformation(logInformation3+"     "+"2.成功获取到稳定版负载的镜像id和负载名称");
+
+//        3.根据id对两个map进行匹配创建一个新的mapList来实现镜像的替换部署
+
+        Map<String, String> mapList = new HashMap<>();
+        for (Long oldImageId : oldMap.keySet()) {
+            for (Long newImageId : newMap.keySet()) {
+                if (oldImageId.equals(newImageId)){
+                    mapList.put(oldMap.get(oldImageId), newMap.get(newImageId));//负载名称和镜像url
+                }
+            }
+        }
+//        4.切断灰度版本的流量  变成tester
+        try {
+            this.cutStableFlow();
+        } catch (ApiException e) {
+            String logInformation = task.getLogInformation();
+            task.setLogInformation(logInformation+"     "+"切断稳定版本的流量失败，灰度发布失败");
+            task.setIsSuccess(1);//1代表任务失败
+            taskService.save(task);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "切断稳定版本的流量失败，请稍后重试");
+        }
+        String logInformation2 = task.getLogInformation();
+        task.setLogInformation(logInformation2+"     "+"3.切断稳定版本的流量成功");
+
+        //  5.根据服务名称和镜像URL替换镜像版本
+        for (Map.Entry<String, String> entry : mapList.entrySet()) {
+            String serviceName = entry.getKey();
+            String imageUrl = entry.getValue();
+            try {
+                this.updateDeployment(serviceName, imageUrl);
+            } catch (ApiException e) {
+                String logInformation = task.getLogInformation();
+                task.setLogInformation(logInformation+"  "+"更新deployment失败，稳定版发布失败");
+                task.setIsSuccess(1);//1代表任务失败
+                taskService.save(task);
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新deployment失败，请检查服务名称是否正确稍后重试");
+            }
+        }
+
+//        6.镜像部署完成进行点火测试
+        String s = task.getLogInformation();
+        task.setLogInformation(s+"     "+"4.镜像部署完成，开始进行点火测试");
+        Boolean flag= null;
+        while (flag==null){
+            try {
+                flag=this.fireTest();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            if (flag==null){
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    throw new BusinessException(ErrorCode.SYSTEM_ERROR, "轮询失败");
+                }
+            } else if (flag==false) {
+                task.setLogInformation("点火测试失败，请稍后重试");
+                task.setIsSuccess(1);
+                break;
+            }else {
+                String information = task.getLogInformation();
+                task.setLogInformation(information+"  "+"点火测试通过");
+            }
+        }
+
+        //  7.灰度版本测试通过，进行流量切换，支持灰度版本的内测用户
+        if (flag != null && flag) {
+            String information = task.getLogInformation();
+            task.setLogInformation(information+"     "+"5.稳定版本测试通过，开始进行稳定版发布");
+            try {
+                this.resumeCanaryFlow();
+            } catch (ApiException e) {
+                String logInformation = task.getLogInformation();
+                task.setLogInformation(logInformation+"  "+"流量更新失败，稳定版发布失败");
+                task.setIsSuccess(1);
+                taskService.save(task);
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "流量更新失败，稳定版本发布失败");
+            }
+        }
+        String logInformation = task.getLogInformation();
+        task.setLogInformation(logInformation+"  "+"6.流量切换成功,成功发布！！！");
+        task.setIsSuccess(0);
+        taskService.save(task);
+        return task.getId();
+    }
+
+//        灰度发布   根据给定好的map列表进行发布
+    public long latestDeploy(HttpServletRequest request,List<Map<String,String>> mapList){
+
+//        0.创建task对象
+        Task task = new Task();
+        task.setDescription("实现灰度发布");
+        task.setUserId(userService.getLoginUser(request).getId());
+        ArrayList<String> imageList = new ArrayList<>();
+        for (Map<String, String> map : mapList) {
+            imageList.add(map.get("image_id"));
+        }
+        task.setImageList(imageList.toString());
+
+//        1.切断灰度版本的流量  变成tester
+        try {
+            this.cutCanaryFlow();
+        } catch (ApiException e) {
+            task.setLogInformation("切断灰度版本的流量失败，灰度发布失败");
+            task.setIsSuccess(1);//1代表任务失败
+            taskService.save(task);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "切断灰度版本的流量失败，请稍后重试");
+        }
+        task.setLogInformation("1.切断灰度版本的流量成功，开始部署服务     ");
+
+        //  2.根据服务id和镜像名称替换镜像版本
+        for (Map<String, String> map : mapList) {
+            String serviceName = map.get("service_name");
+            String imageId = map.get("image_id");
+            Image image = imageService.getById(imageId);
+            String imageUrl = image.getImageUrl();
+            try {
+                this.updateDeployment(serviceName, imageUrl);
+            } catch (ApiException e) {
+                String logInformation = task.getLogInformation();
+                task.setLogInformation(logInformation+"  "+"更新deployment失败，灰度发布失败");
+                task.setIsSuccess(1);//1代表任务失败
+                taskService.save(task);
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新deployment失败，请检查服务名称是否正确稍后重试");
+            }
+        }
+
+
+//        3.镜像部署完成进行点火测试
+        String s = task.getLogInformation();
+        task.setLogInformation(s+"     "+"2.镜像部署完成，开始进行点火测试");
+        Boolean flag= null;
+        while (flag==null){
+            try {
+                flag=this.fireTest();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            if (flag==null){
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    throw new BusinessException(ErrorCode.SYSTEM_ERROR, "轮询失败");
+                }
+            } else if (flag==false) {
+                task.setLogInformation("点火测试失败，请稍后重试");
+                task.setIsSuccess(1);
+                break;
+            }else {
+                String information = task.getLogInformation();
+                task.setLogInformation(information+"  "+"点火测试通过");
+            }
+        }
+
+        //  4.灰度版本测试通过，进行流量切换，支持灰度版本的内测用户
+        if (flag != null && flag) {
+            String information = task.getLogInformation();
+            task.setLogInformation(information+"     "+"3.灰度版本测试通过，开始进行灰度发布");
+            try {
+                this.resumeCanaryFlow();
+            } catch (ApiException e) {
+                String logInformation = task.getLogInformation();
+                task.setLogInformation(logInformation+"  "+"流量更新失败，灰度发布失败");
+                task.setIsSuccess(1);
+                taskService.save(task);
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "流量更新失败，灰度发布失败");
+            }
+        }
+        String logInformation = task.getLogInformation();
+        task.setLogInformation(logInformation+"  "+"4.流量切换成功,成功发布！！！");
+        task.setIsSuccess(0);
+        taskService.save(task);
+        return task.getId();
+    }
 }
+

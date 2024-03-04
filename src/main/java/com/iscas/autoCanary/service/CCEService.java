@@ -1,8 +1,10 @@
 package com.iscas.autoCanary.service;
 
+import com.iscas.autoCanary.pojo.Task;
 import com.iscas.autoCanary.pojo.output.ImageOutput;
 import io.kubernetes.client.openapi.ApiException;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -76,4 +78,12 @@ public interface CCEService {
 
     //    根据所有标签为old的无状态复杂查找对应的镜像id和服务名称
     public Map<Long,String> oldImageListAndDeploymentName() throws ApiException;
+
+    public long latestRollback(Task task,List<Long> imageList);
+
+    public long stableRollback(Task task,List<Long> imageList);
+
+    public long stableDeploy(HttpServletRequest request);
+
+    public long latestDeploy(HttpServletRequest request,List<Map<String,String>> mapList);
 }
