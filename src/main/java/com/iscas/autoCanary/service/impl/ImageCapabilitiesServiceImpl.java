@@ -13,6 +13,7 @@ import com.iscas.autoCanary.pojo.output.ImageOutput;
 import com.iscas.autoCanary.pojo.output.MarkLineOutput;
 import com.iscas.autoCanary.service.ImageCapabilitiesService;
 import com.iscas.autoCanary.mapper.ImagecapabilitiesMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.GsonJsonParser;
 import org.springframework.stereotype.Service;
 
