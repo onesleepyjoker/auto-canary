@@ -11,10 +11,8 @@ import com.iscas.autoCanary.pojo.Image;
 import com.iscas.autoCanary.pojo.ImageCapabilities;
 import com.iscas.autoCanary.pojo.output.ImageOutput;
 import com.iscas.autoCanary.pojo.output.MarkLineOutput;
-import com.iscas.autoCanary.service.CCEService;
 import com.iscas.autoCanary.service.ImageCapabilitiesService;
 import com.iscas.autoCanary.mapper.ImagecapabilitiesMapper;
-import io.kubernetes.client.openapi.ApiException;
 import org.springframework.boot.json.GsonJsonParser;
 import org.springframework.stereotype.Service;
 
@@ -36,10 +34,6 @@ public class ImageCapabilitiesServiceImpl extends ServiceImpl<ImagecapabilitiesM
 
     @Resource
     ImageMapper imageMapper;
-
-    @Resource
-    CCEService cceService;
-
 
     @Override
     public void addMark(Long userId,String description ,List<Long> imageIdList,Long imageMappingId) {
@@ -169,45 +163,6 @@ public class ImageCapabilitiesServiceImpl extends ServiceImpl<ImagecapabilitiesM
             res.add(markLineOutput);
         }
         return res;
-    }
-
-    @Override
-    public List<ImageOutput> getIncompatibleVersion(Long imageId) throws ApiException {
-        //线上镜像list
-        List<ImageOutput> cceImageList = cceService.getImageList();
-        //判断image是否存在
-        Image image = imageMapper.selectOne(new QueryWrapper<Image>().eq("id", imageId));
-        if (image==null) {
-            throw new BusinessException(ErrorCode.NO_IMAGES,"镜像id："+imageId+"不存在");
-        }
-
-        List<ImageCapabilities> list = lambdaQuery().orderByDesc(ImageCapabilities::getCreateTime).list();
-
-        //获取最近一条包含指定imageId的路径，将ImageCapabilities转化成ImageOutPut
-        List<ImageOutput> imageList = new ArrayList<>();
-        for (ImageCapabilities imageCapabilities : list) {
-            //镜像兼容列表[1,2,3]的对应镜像信息[{imageName,version},{imageName:version}]
-            Gson gson = new Gson();
-            List<Long> versionList= gson.fromJson(imageCapabilities.getImageList(), new TypeToken<List<Long>>() {
-            }.getType());
-            //找到包含了imageId,返回并结束循环
-            if(versionList.contains(imageId)){
-                //select imageName,version by id
-                for (Long version : versionList) {
-                    Image imageRecord = imageMapper.selectOne(new QueryWrapper<Image>().eq("id", version));
-                    if (imageRecord!=null) {
-                        ImageOutput imageOutput = new ImageOutput(imageRecord.getImageName(), imageRecord.getVersion());
-                        //过滤掉与线上版本一致的
-                        if (!cceImageList.contains(imageOutput)) {
-                            imageList.add(imageOutput);
-                        }
-                    }
-                }
-                break;
-            }
-        }
-
-        return imageList;
     }
 }
 

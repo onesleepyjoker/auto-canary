@@ -881,10 +881,12 @@ public class CCEServiceImpl implements CCEService {
 //        3.根据id对两个map进行匹配创建一个新的mapList来实现镜像的替换部署
 
         Map<String, String> mapList = new HashMap<>();
-        for (Long oldImageId : oldMap.keySet()) {
-            for (Long newImageId : newMap.keySet()) {
-                if (oldImageId.equals(newImageId)){
-                    mapList.put(oldMap.get(oldImageId), newMap.get(newImageId));//负载名称和镜像url
+        for (Long oldImageId : oldMap.keySet()) {//镜像id和负载名称
+            for (Long newImageId : newMap.keySet()) {//镜像id和镜像url
+                String oldImageName = imageService.getById(oldImageId).getImageName();
+                String newImageName = imageService.getById(newImageId).getImageName();
+                if (oldImageName.equals(newImageName)){
+                    mapList.put(oldMap.get(oldImageId),newMap.get(newImageId));
                 }
             }
         }

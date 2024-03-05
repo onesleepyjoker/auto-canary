@@ -21,4 +21,5 @@
         logInformation,imageList,createTime,
         updateTime,isDelete,userId
     </sql>
+    <select id="pageTaskAndUserName" resultType="com.iscas.autoCanary.model.dto.TaskDto"></select>
 </mapper>

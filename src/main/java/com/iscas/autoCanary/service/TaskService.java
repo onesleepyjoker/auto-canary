@@ -1,5 +1,8 @@
 package com.iscas.autoCanary.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.iscas.autoCanary.model.dto.TaskDto;
 import com.iscas.autoCanary.pojo.Task;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -10,4 +13,6 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface TaskService extends IService<Task> {
 
+
+    IPage getTaskAndUsername(int pageNum, int pageSize);
 }
