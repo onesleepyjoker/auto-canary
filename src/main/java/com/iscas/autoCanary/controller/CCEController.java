@@ -1,6 +1,10 @@
 package com.iscas.autoCanary.controller;
 
 import cn.hutool.core.lang.UUID;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.iscas.autoCanary.common.BaseResponse;
@@ -9,7 +13,11 @@ import com.iscas.autoCanary.common.ErrorCode;
 import com.iscas.autoCanary.common.ResultUtils;
 import com.iscas.autoCanary.contant.UserConstant;
 import com.iscas.autoCanary.exception.BusinessException;
+import com.iscas.autoCanary.mapper.TaskMapper;
 import com.iscas.autoCanary.model.domain.request.ImageCreateRequest;
+import com.iscas.autoCanary.model.dto.ImageQuery;
+import com.iscas.autoCanary.model.dto.TaskDto;
+import com.iscas.autoCanary.model.dto.TaskQuery;
 import com.iscas.autoCanary.pojo.Image;
 import com.iscas.autoCanary.pojo.Task;
 import com.iscas.autoCanary.pojo.User;
@@ -25,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
@@ -52,6 +61,10 @@ public class CCEController {
 
     @Autowired
     private TaskService taskService;
+
+    @Resource
+    private TaskMapper taskMapper;
+
 
     @PostMapping("/stable/cutFlow")
     public BaseResponse<String> cutStableFlow(HttpServletRequest request) throws ApiException {
@@ -474,6 +487,27 @@ public class CCEController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR ,"任务已经删除，或者不存在");
         }
         return ResultUtils.success(id);
+    }
+
+    @PostMapping("/list/page/task")
+    public BaseResponse<IPage<TaskDto>> listImagebyPage(HttpServletRequest request, @RequestBody TaskQuery taskQuery) {
+        User loginUser = userService.getLoginUser(request);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+        if (taskQuery == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数为空");
+        }
+
+//        分页查询逻辑
+        int pageNum = taskQuery.getPageNum();
+        int pageSize = taskQuery.getPageSize();
+        if (pageSize > 50) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "单页查询数量过多");//限制爬虫
+        }
+
+        IPage iPage = taskService.getTaskAndUsername(pageNum, pageSize);
+        return ResultUtils.success(iPage);
     }
 
 }
