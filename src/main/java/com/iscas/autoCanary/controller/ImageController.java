@@ -14,6 +14,7 @@ import com.iscas.autoCanary.model.domain.request.ImageUpdateRequest;
 import com.iscas.autoCanary.model.dto.ImageQuery;
 import com.iscas.autoCanary.pojo.Image;
 import com.iscas.autoCanary.pojo.User;
+import com.iscas.autoCanary.pojo.output.ServiceInfoDTO;
 import com.iscas.autoCanary.service.ImageService;
 import com.iscas.autoCanary.service.UserService;
 import io.kubernetes.client.openapi.ApiException;
@@ -119,6 +120,40 @@ public class ImageController {
                 new QueryWrapper<>(image));
         return ResultUtils.success(imagePage);
     }
+
+    /**
+     * 查询线上运行服务的相关镜像列表
+     * @param request
+     * @return
+     */
+    @GetMapping("/listImages")
+    public BaseResponse<List<ServiceInfoDTO>> getServingImgs(HttpServletRequest request) throws ApiException {
+        User loginUser = userService.getLoginUser(request);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+        return ResultUtils.success(imageService.getServingImgs());
+    }
+
+    @GetMapping("/listUnusedImages")
+    public BaseResponse<List<ServiceInfoDTO>> getUnusedImages(HttpServletRequest request) throws ApiException {
+        User loginUser = userService.getLoginUser(request);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+        return ResultUtils.success(imageService.getUnusedImages());
+    }
+
+    @PostMapping("/deleteImages")
+    public BaseResponse deleteImages(HttpServletRequest request,@RequestBody List<Long> imageList){
+        User loginUser = userService.getLoginUser(request);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+        imageService.delImages(imageList);
+        return ResultUtils.success(null);
+    }
+
 
     //    存储镜像的配置文件
     @PostMapping("/save/yaml")

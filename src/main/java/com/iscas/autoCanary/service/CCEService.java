@@ -2,6 +2,7 @@ package com.iscas.autoCanary.service;
 
 import com.iscas.autoCanary.pojo.Task;
 import com.iscas.autoCanary.pojo.output.ImageOutput;
+import com.iscas.autoCanary.pojo.output.LogInfoDTO;
 import io.kubernetes.client.openapi.ApiException;
 
 import javax.servlet.http.HttpServletRequest;
@@ -55,6 +56,9 @@ public interface CCEService {
     //    获取statefulSet列表
     public List<String> getStatefulSetList() throws ApiException;
 
+    // 获取所有namespace当中的pod列表里面的镜像列表
+    List<ImageOutput> getImageList() throws ApiException;
+
     //    获取所有namespace当中的new pod列表里面的镜像列表
     public List<ImageOutput> getNewImageList() throws ApiException;
 
@@ -65,7 +69,7 @@ public interface CCEService {
     public int updateNewImageList(Map<String, String> imageNameAndUrl) throws ApiException;
 
     //    模拟点火测试的接口方法
-    public boolean fireTest() throws InterruptedException;
+    public Boolean fireTest() throws InterruptedException;
 
     //    根据所有标签为new的无状态复杂查找对应的镜像id和镜像url
     public Map<Long,String> NewImageList() throws ApiException;
@@ -79,11 +83,23 @@ public interface CCEService {
     //    根据所有标签为old的无状态复杂查找对应的镜像id和服务名称
     public Map<Long,String> oldImageListAndDeploymentName() throws ApiException;
 
+    /**
+     * 手动恢复流量规则，完成发布
+     * @param taskId
+     * @param reason
+     */
+    void bypassDeploy(Long taskId,String reason);
+
+    /**
+     * 终止一个发布任务
+     */
+    void stopTask(Long taskId,String reason) throws ApiException;
+
     public long latestRollback(Task task,List<Long> imageList);
 
     public long stableRollback(Task task,List<Long> imageList);
 
     public long stableDeploy(HttpServletRequest request);
 
-    public long latestDeploy(HttpServletRequest request,List<Map<String,String>> mapList);
+    public long latestDeploy(HttpServletRequest request,List<Map<String,String>> mapList) throws ApiException;
 }

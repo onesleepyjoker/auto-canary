@@ -22,6 +22,7 @@ import com.iscas.autoCanary.pojo.Image;
 import com.iscas.autoCanary.pojo.Task;
 import com.iscas.autoCanary.pojo.User;
 import com.iscas.autoCanary.pojo.output.ImageOutput;
+import com.iscas.autoCanary.pojo.output.LogInfoDTO;
 import com.iscas.autoCanary.service.CCEService;
 import com.iscas.autoCanary.service.ImageService;
 import com.iscas.autoCanary.service.TaskService;
@@ -399,7 +400,7 @@ public class CCEController {
 
         List<ImageOutput> imageList = null;
         try {
-            imageList = cceService.getNewImageList();
+            imageList = cceService.getImageList();
         } catch (ApiException e) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "获取image列表失败，请稍后重试");
         }
@@ -410,12 +411,13 @@ public class CCEController {
     //    最新版发布接口
     @PostMapping("/latest")
     public BaseResponse<Long> deployLatest(HttpServletRequest request,
-                                           @RequestBody List<Map<String,String>> mapList) {
+                                           @RequestBody List<Map<String,String>> mapList) throws ApiException {
         Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
         User currentUser = (User) userObj;
         if (currentUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
+
         long id = cceService.latestDeploy(request, mapList);
         return ResultUtils.success(id);
     }
@@ -429,6 +431,7 @@ public class CCEController {
         if (currentUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
+
         long id = cceService.stableDeploy(request);
         return ResultUtils.success(id);
     }
@@ -509,5 +512,44 @@ public class CCEController {
         IPage iPage = taskService.getTaskAndUsername(pageNum, pageSize);
         return ResultUtils.success(iPage);
     }
+
+    //终止一个发布任务
+    @PostMapping("/stopTask")
+    public BaseResponse stopTask(HttpServletRequest request,@RequestBody Map<String,Object> requestBody) throws ApiException {
+        User loginUser = userService.getLoginUser(request);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+
+        Long taskId = Long.valueOf((Integer)requestBody.get("task_id"));
+        String reason = (String) requestBody.get("reason");
+        cceService.stopTask(taskId,reason);
+        return ResultUtils.success(null);
+    }
+
+    //人工允许恢复流量规则，完成发布
+    @PostMapping("/bypassDeploy")
+    public BaseResponse passDeploy(HttpServletRequest request,@RequestBody Map<String,Object> requestBody) throws ApiException {
+        User loginUser = userService.getLoginUser(request);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+
+        Long taskId = Long.valueOf((Integer)requestBody.get("task_id"));
+        String reason = (String) requestBody.get("reason");
+        cceService.bypassDeploy(taskId,reason);
+        return ResultUtils.success(null);
+    }
+
+    //返回log日志记录
+    @GetMapping("/log")
+    public BaseResponse<LogInfoDTO> getTestLog(HttpServletRequest request,@RequestParam(name = "task_id") Long taskId){
+        User loginUser = userService.getLoginUser(request);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+        return ResultUtils.success(taskService.getLog(taskId));
+    }
+
 
 }
