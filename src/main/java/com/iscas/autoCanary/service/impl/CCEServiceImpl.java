@@ -1,11 +1,13 @@
 package com.iscas.autoCanary.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.core.SerializableString;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.iscas.autoCanary.common.ErrorCode;
 import com.iscas.autoCanary.exception.BusinessException;
+import com.iscas.autoCanary.mapper.TaskMapper;
 import com.iscas.autoCanary.pojo.Image;
 import com.iscas.autoCanary.pojo.Task;
 import com.iscas.autoCanary.pojo.output.ImageOutput;
@@ -29,6 +31,7 @@ import org.springframework.stereotype.Service;
 import javax.servlet.http.HttpServletRequest;
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -47,6 +50,8 @@ public class CCEServiceImpl implements CCEService {
     final String CANARY_HEADER_TEST_PATTERN = "^tester$";
     final String CANARY_HEADER_NORMAL_PATTERN = "^(new|tester)$";
     final String STABLE_HEADER_PATTERN = "^tester$";
+    //记录发布任务的执行状态
+    public final Map<Long,Boolean> executionStatus = new ConcurrentHashMap<>();
 
     @Value("${secret.name}")
     private String SECRET_NAME;
@@ -372,6 +377,55 @@ public class CCEServiceImpl implements CCEService {
 
     //    获取到所有正在运行的标签为new的灰度版本镜像列表
     @Override
+    public List<ImageOutput> getImageList() throws ApiException {
+        AppsV1Api appsV1Api = new AppsV1Api();
+//        获取到所有的有状态负载 （运行当中）
+        V1StatefulSetList v1StatefulSetList = appsV1Api.listNamespacedStatefulSet(
+                NAMESPACE, null, null, null,
+                null, null, null, null,
+                null, null, null, null);
+//        获取到所有的无状态负载 （没有运行当中的负载不会出现在k8s当中）
+        V1DeploymentList v1DeploymentList = appsV1Api.listNamespacedDeployment(NAMESPACE, null,
+                null, null, null, "version=new",
+                null, null, null, null,
+                null, null);
+
+        ArrayList<ImageOutput> list = new ArrayList<>();
+        for (V1Deployment item : v1DeploymentList.getItems()) {
+            List<V1Container> containers = item.getSpec().getTemplate().getSpec().getContainers();
+            for (V1Container container : containers) {
+                String image = container.getImage();//rabbitmq：3.12
+                String[] split = image.split(":", 2);
+                ImageOutput imageOutput = new ImageOutput();
+                imageOutput.setImageName(split[0]);
+                if(split.length>1){
+                    imageOutput.setVersion(split[1]);
+                }else{
+                    throw new BusinessException(ErrorCode.DEPLOYMENT_CONFIG_ERROR);
+                }
+                list.add(imageOutput);
+            }
+        }
+        for (V1StatefulSet item : v1StatefulSetList.getItems()) {
+            List<V1Container> containers = item.getSpec().getTemplate().getSpec().getContainers();
+            for (V1Container container : containers) {
+                String image = container.getImage();//rabbitmq：3.12
+                String[] split = image.split(":", 2);
+                ImageOutput imageOutput = new ImageOutput();
+                imageOutput.setImageName(split[0]);
+                if(split.length>1){
+                    imageOutput.setVersion(split[1]);
+                }else{
+                    throw new BusinessException(ErrorCode.DEPLOYMENT_CONFIG_ERROR);
+                }
+                list.add(imageOutput);
+            }
+        }
+        return list;
+    }
+
+    //    获取到所有正在运行的标签为new的灰度版本镜像列表
+    @Override
     public List<ImageOutput> getNewImageList() throws ApiException {
         AppsV1Api appsV1Api = new AppsV1Api();
 //        获取到所有的有状态负载 （运行当中）
@@ -393,7 +447,11 @@ public class CCEServiceImpl implements CCEService {
                 String[] split = image.split(":", 2);
                 ImageOutput imageOutput = new ImageOutput();
                 imageOutput.setImageName(split[0]);
-                imageOutput.setVersion(split[1]);
+                if(split.length>1){
+                    imageOutput.setVersion(split[1]);
+                }else{
+                    throw new BusinessException(ErrorCode.DEPLOYMENT_CONFIG_ERROR);
+                }
                 list.add(imageOutput);
             }
         }
@@ -404,7 +462,11 @@ public class CCEServiceImpl implements CCEService {
                 String[] split = image.split(":", 2);
                 ImageOutput imageOutput = new ImageOutput();
                 imageOutput.setImageName(split[0]);
-                imageOutput.setVersion(split[1]);
+                if(split.length>1){
+                    imageOutput.setVersion(split[1]);
+                }else{
+                    throw new BusinessException(ErrorCode.DEPLOYMENT_CONFIG_ERROR);
+                }
                 list.add(imageOutput);
             }
         }
@@ -435,7 +497,11 @@ public class CCEServiceImpl implements CCEService {
                 String[] split = image.split(":", 2);
                 ImageOutput imageOutput = new ImageOutput();
                 imageOutput.setImageName(split[0]);
-                imageOutput.setVersion(split[1]);
+                if(split.length>1){
+                    imageOutput.setVersion(split[1]);
+                }else{
+                    throw new BusinessException(ErrorCode.DEPLOYMENT_CONFIG_ERROR);
+                }
                 list.add(imageOutput);
             }
         }
@@ -446,7 +512,11 @@ public class CCEServiceImpl implements CCEService {
                 String[] split = image.split(":", 2);
                 ImageOutput imageOutput = new ImageOutput();
                 imageOutput.setImageName(split[0]);
-                imageOutput.setVersion(split[1]);
+                if(split.length>1){
+                    imageOutput.setVersion(split[1]);
+                }else{
+                    throw new BusinessException(ErrorCode.DEPLOYMENT_CONFIG_ERROR);
+                }
                 list.add(imageOutput);
             }
         }
@@ -498,7 +568,7 @@ public class CCEServiceImpl implements CCEService {
 
     //    模拟点火测试的接口方法
     @Override
-    public boolean fireTest() throws InterruptedException {
+    public Boolean fireTest() throws InterruptedException {
         Thread.sleep(5000);
         return true;
     }
@@ -569,7 +639,7 @@ public class CCEServiceImpl implements CCEService {
         return res;
     }
 
-    //    返回所有标签为new的正在运行的镜像id和服务名称
+    //    返回所有标签为old的正在运行的镜像id和服务名称
     @Override
     public Map<Long, String> oldImageListAndDeploymentName() throws ApiException {
         AppsV1Api appsV1Api = new AppsV1Api();
@@ -635,10 +705,11 @@ public class CCEServiceImpl implements CCEService {
         Map<Long, String> newList = new HashMap<>();
         try {
             Map<Long, String> map = this.newImageListAndDeploymentName();
+            newList=map;
         } catch (ApiException e) {
             task.setLogInformation("无法读取当前灰度版本的镜像信息");
             task.setIsSuccess(1);
-            taskService.save(task);
+            taskService.saveOrUpdate(task);
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "无法读取当前灰度版本的镜像信息");
         }
 
@@ -662,7 +733,7 @@ public class CCEServiceImpl implements CCEService {
             String logInformation = task.getLogInformation();
             task.setLogInformation(logInformation + "     " + "切断灰度版本的流量失败，回滚失败");
             task.setIsSuccess(1);//1代表任务失败
-            taskService.save(task);
+            taskService.saveOrUpdate(task);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "切断灰度版本的流量失败，请稍后重试");
         }
         String logInformation2 = task.getLogInformation();
@@ -678,16 +749,20 @@ public class CCEServiceImpl implements CCEService {
                 String logInformation = task.getLogInformation();
                 task.setLogInformation(logInformation + "  " + "更新deployment失败，灰度版发布失败");
                 task.setIsSuccess(1);//1代表任务失败
-                taskService.save(task);
+                taskService.saveOrUpdate(task);
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新deployment失败，请检查服务名称是否正确稍后重试");
             }
         }
 
 //        6.镜像部署完成进行点火测试
+        //设置任务执行状态
+        taskService.saveOrUpdate(task);
+        executionStatus.put(task.getId(),true);
         String s = task.getLogInformation();
         task.setLogInformation(s + "     " + "4.镜像部署完成，开始进行点火测试");
         Boolean flag = null;
-        while (flag == null) {
+        //executionStatus记录该任务状态
+        while (executionStatus.get(task.getId())&&flag == null) {
             try {
                 flag = this.fireTest();
             } catch (InterruptedException e) {
@@ -702,11 +777,20 @@ public class CCEServiceImpl implements CCEService {
             } else if (flag == false) {
                 task.setLogInformation("点火测试失败，请稍后重试");
                 task.setIsSuccess(1);
-                break;
+                throw new BusinessException(ErrorCode.TEST_ERR);
             } else {
                 String information = task.getLogInformation();
                 task.setLogInformation(information + "  " + "点火测试通过");
             }
+        }
+        //任务被手动停止
+        if (!executionStatus.get(task.getId())) {
+            executionStatus.remove(task.getId());
+            String logInformation = task.getLogInformation();
+            task.setLogInformation(logInformation+"     "+"该任务被手动停止，请手动回滚或者操作集群后手动恢复流量");
+            task.setIsSuccess(1);
+            taskService.saveOrUpdate(task);
+            throw new BusinessException("该任务被手动停止，请手动回滚或者操作集群后手动恢复流量",5000,"");
         }
 
         //  7.灰度版本测试通过，进行流量切换，支持灰度版本的内测用户
@@ -719,14 +803,16 @@ public class CCEServiceImpl implements CCEService {
                 String logInformation = task.getLogInformation();
                 task.setLogInformation(logInformation + "  " + "流量更新失败，回滚失败");
                 task.setIsSuccess(1);
-                taskService.save(task);
+                taskService.saveOrUpdate(task);
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "流量更新失败，回滚失败");
             }
         }
+        //删除记录任务状态的全局变量的值
+        executionStatus.remove(task.getId());
         String logInformation = task.getLogInformation();
         task.setLogInformation(logInformation + "  " + "6.流量切换成功,回滚！！！");
         task.setIsSuccess(0);
-        taskService.save(task);
+        taskService.saveOrUpdate(task);
         return task.getId();
     }
 
@@ -737,10 +823,11 @@ public class CCEServiceImpl implements CCEService {
         Map<Long, String> newList = new HashMap<>();
         try {
             Map<Long, String> map = this.oldImageListAndDeploymentName();
+            newList=map;
         } catch (ApiException e) {
             task.setLogInformation("无法读取当前灰度版本的镜像信息");
             task.setIsSuccess(1);
-            taskService.save(task);
+            taskService.saveOrUpdate(task);
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "无法读取当前稳定版本的镜像信息");
         }
 //          3.根据获取到的负载信息匹配对应的指定版本镜像
@@ -763,7 +850,7 @@ public class CCEServiceImpl implements CCEService {
             String logInformation = task.getLogInformation();
             task.setLogInformation(logInformation + "     " + "切断稳定版本的流量失败，回滚失败");
             task.setIsSuccess(1);//1代表任务失败
-            taskService.save(task);
+            taskService.saveOrUpdate(task);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "切断稳定版本的流量失败，请稍后重试");
         }
         String logInformation2 = task.getLogInformation();
@@ -779,16 +866,20 @@ public class CCEServiceImpl implements CCEService {
                 String logInformation = task.getLogInformation();
                 task.setLogInformation(logInformation + "  " + "更新deployment失败，稳定版发布失败");
                 task.setIsSuccess(1);//1代表任务失败
-                taskService.save(task);
+                taskService.saveOrUpdate(task);
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新deployment失败，请检查服务名称是否正确稍后重试");
             }
         }
 
 //        6.镜像部署完成进行点火测试
+        //设置任务执行状态
+        taskService.saveOrUpdate(task);
+        executionStatus.put(task.getId(),true);
         String s = task.getLogInformation();
         task.setLogInformation(s + "     " + "4.镜像部署完成，开始进行点火测试");
         Boolean flag = null;
-        while (flag == null) {
+        //executionStatus记录该任务状态
+        while (executionStatus.get(task.getId())&&flag == null) {
             try {
                 flag = this.fireTest();
             } catch (InterruptedException e) {
@@ -803,11 +894,20 @@ public class CCEServiceImpl implements CCEService {
             } else if (flag == false) {
                 task.setLogInformation("点火测试失败，请稍后重试");
                 task.setIsSuccess(1);
-                break;
+                throw new BusinessException(ErrorCode.TEST_ERR);
             } else {
                 String information = task.getLogInformation();
                 task.setLogInformation(information + "  " + "点火测试通过");
             }
+        }
+        //任务被手动停止
+        if (!executionStatus.get(task.getId())) {
+            executionStatus.remove(task.getId());
+            String logInformation = task.getLogInformation();
+            task.setLogInformation(logInformation+"     "+"该任务被手动停止，请手动回滚或者操作集群后手动恢复流量");
+            task.setIsSuccess(1);
+            taskService.saveOrUpdate(task);
+            throw new BusinessException("该任务被手动停止，请手动回滚或者操作集群后手动恢复流量",5000,"");
         }
 
         //  7.灰度版本测试通过，进行流量切换，支持灰度版本的内测用户
@@ -820,14 +920,15 @@ public class CCEServiceImpl implements CCEService {
                 String logInformation = task.getLogInformation();
                 task.setLogInformation(logInformation + "  " + "流量更新失败，稳定版发布失败");
                 task.setIsSuccess(1);
-                taskService.save(task);
+                taskService.saveOrUpdate(task);
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "流量更新失败，回滚失败");
             }
         }
+        executionStatus.remove(task.getId());
         String logInformation = task.getLogInformation();
         task.setLogInformation(logInformation + "  " + "6.流量切换成功,回滚！！！");
         task.setIsSuccess(0);
-        taskService.save(task);
+        taskService.saveOrUpdate(task);
         return task.getId();
     }
 
@@ -851,12 +952,12 @@ public class CCEServiceImpl implements CCEService {
         } catch (ApiException e) {
             task.setLogInformation("无法获取到灰度版本镜像列表，稳定版发布失败");
             task.setIsSuccess(1);
-            taskService.save(task);
+            taskService.saveOrUpdate(task);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "获取镜像列表失败，稳定版本发布失败");
         }catch (BusinessException e) {
             task.setLogInformation("无法获取到灰度版本镜像列表，稳定版发布失败");
             task.setIsSuccess(1);
-            taskService.save(task);
+            taskService.saveOrUpdate(task);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "获取新版镜像列表失败，稳定版本发布失败");
         }
         task.setImageList(imageList.toString());
@@ -872,7 +973,7 @@ public class CCEServiceImpl implements CCEService {
             String logInformation = task.getLogInformation();
             task.setLogInformation(logInformation+"     "+"无法获取到稳定版负载的镜像id和负载名称，稳定版发布失败");
             task.setIsSuccess(1);
-            taskService.save(task);
+            taskService.saveOrUpdate(task);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "获取稳定版镜像列表失败，稳定版本发布失败");
         }
         String logInformation3 = task.getLogInformation();
@@ -897,7 +998,7 @@ public class CCEServiceImpl implements CCEService {
             String logInformation = task.getLogInformation();
             task.setLogInformation(logInformation+"     "+"切断稳定版本的流量失败，灰度发布失败");
             task.setIsSuccess(1);//1代表任务失败
-            taskService.save(task);
+            taskService.saveOrUpdate(task);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "切断稳定版本的流量失败，请稍后重试");
         }
         String logInformation2 = task.getLogInformation();
@@ -913,16 +1014,20 @@ public class CCEServiceImpl implements CCEService {
                 String logInformation = task.getLogInformation();
                 task.setLogInformation(logInformation+"  "+"更新deployment失败，稳定版发布失败");
                 task.setIsSuccess(1);//1代表任务失败
-                taskService.save(task);
+                taskService.saveOrUpdate(task);
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新deployment失败，请检查服务名称是否正确稍后重试");
             }
         }
 
 //        6.镜像部署完成进行点火测试
+        //设置任务执行状态
+        taskService.saveOrUpdate(task);
+        executionStatus.put(task.getId(),true);
         String s = task.getLogInformation();
         task.setLogInformation(s+"     "+"4.镜像部署完成，开始进行点火测试");
         Boolean flag= null;
-        while (flag==null){
+        //executionStatus记录该任务状态
+        while (executionStatus.get(task.getId())&&flag == null) {
             try {
                 flag=this.fireTest();
             } catch (InterruptedException e) {
@@ -937,11 +1042,20 @@ public class CCEServiceImpl implements CCEService {
             } else if (flag==false) {
                 task.setLogInformation("点火测试失败，请稍后重试");
                 task.setIsSuccess(1);
-                break;
+                throw new BusinessException(ErrorCode.TEST_ERR);
             }else {
                 String information = task.getLogInformation();
                 task.setLogInformation(information+"  "+"点火测试通过");
             }
+        }
+        //任务被手动停止
+        if (!executionStatus.get(task.getId())) {
+            executionStatus.remove(task.getId());
+            String logInformation = task.getLogInformation();
+            task.setLogInformation(logInformation+"     "+"该任务被手动停止，请手动回滚或者操作集群后手动恢复流量");
+            task.setIsSuccess(1);
+            taskService.saveOrUpdate(task);
+            throw new BusinessException("该任务被手动停止，请手动回滚或者操作集群后手动恢复流量",5000,"");
         }
 
         //  7.灰度版本测试通过，进行流量切换，支持灰度版本的内测用户
@@ -954,19 +1068,20 @@ public class CCEServiceImpl implements CCEService {
                 String logInformation = task.getLogInformation();
                 task.setLogInformation(logInformation+"  "+"流量更新失败，稳定版发布失败");
                 task.setIsSuccess(1);
-                taskService.save(task);
+                taskService.saveOrUpdate(task);
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "流量更新失败，稳定版本发布失败");
             }
         }
+        executionStatus.remove(task.getId());
         String logInformation = task.getLogInformation();
         task.setLogInformation(logInformation+"  "+"6.流量切换成功,成功发布！！！");
         task.setIsSuccess(0);
-        taskService.save(task);
+        taskService.saveOrUpdate(task);
         return task.getId();
     }
 
 //        灰度发布   根据给定好的map列表进行发布
-    public long latestDeploy(HttpServletRequest request,List<Map<String,String>> mapList){
+    public long latestDeploy(HttpServletRequest request,List<Map<String,String>> mapList) throws ApiException {
 
 //        0.创建task对象
         Task task = new Task();
@@ -984,12 +1099,16 @@ public class CCEServiceImpl implements CCEService {
         } catch (ApiException e) {
             task.setLogInformation("切断灰度版本的流量失败，灰度发布失败");
             task.setIsSuccess(1);//1代表任务失败
-            taskService.save(task);
+            taskService.saveOrUpdate(task);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "切断灰度版本的流量失败，请稍后重试");
         }
         task.setLogInformation("1.切断灰度版本的流量成功，开始部署服务     ");
 
-        //  2.根据服务id和镜像名称替换镜像版本
+        //  记录标签为new的latest版本现在正在运行的服务：镜像
+        Map<Long, String> onlineImages = newImageListAndDeploymentName();
+
+
+        //  2.根据服务名称和镜像名称替换镜像版本
         for (Map<String, String> map : mapList) {
             String serviceName = map.get("service_name");
             String imageId = map.get("image_id");
@@ -1001,17 +1120,21 @@ public class CCEServiceImpl implements CCEService {
                 String logInformation = task.getLogInformation();
                 task.setLogInformation(logInformation+"  "+"更新deployment失败，灰度发布失败");
                 task.setIsSuccess(1);//1代表任务失败
-                taskService.save(task);
+                taskService.saveOrUpdate(task);
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新deployment失败，请检查服务名称是否正确稍后重试");
             }
         }
 
 
 //        3.镜像部署完成进行点火测试
+        //设置任务执行状态
+        taskService.saveOrUpdate(task);
+        executionStatus.put(task.getId(),true);
         String s = task.getLogInformation();
         task.setLogInformation(s+"     "+"2.镜像部署完成，开始进行点火测试");
         Boolean flag= null;
-        while (flag==null){
+        //executionStatus记录该任务状态
+        while (executionStatus.get(task.getId())&&flag == null) {
             try {
                 flag=this.fireTest();
             } catch (InterruptedException e) {
@@ -1026,11 +1149,20 @@ public class CCEServiceImpl implements CCEService {
             } else if (flag==false) {
                 task.setLogInformation("点火测试失败，请稍后重试");
                 task.setIsSuccess(1);
-                break;
+                throw new BusinessException(ErrorCode.TEST_ERR);
             }else {
                 String information = task.getLogInformation();
                 task.setLogInformation(information+"  "+"点火测试通过");
             }
+        }
+        //任务被手动停止
+        if (!executionStatus.get(task.getId())) {
+            executionStatus.remove(task.getId());
+            String logInformation = task.getLogInformation();
+            task.setLogInformation(logInformation+"     "+"该任务被手动停止，请手动回滚或者操作集群后手动恢复流量");
+            task.setIsSuccess(1);
+            taskService.saveOrUpdate(task);
+            throw new BusinessException("该任务被手动停止，请手动回滚或者操作集群后手动恢复流量",5000,"");
         }
 
         //  4.灰度版本测试通过，进行流量切换，支持灰度版本的内测用户
@@ -1043,15 +1175,39 @@ public class CCEServiceImpl implements CCEService {
                 String logInformation = task.getLogInformation();
                 task.setLogInformation(logInformation+"  "+"流量更新失败，灰度发布失败");
                 task.setIsSuccess(1);
-                taskService.save(task);
+                taskService.saveOrUpdate(task);
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "流量更新失败，灰度发布失败");
             }
         }
+        executionStatus.remove(task.getId());
         String logInformation = task.getLogInformation();
         task.setLogInformation(logInformation+"  "+"4.流量切换成功,成功发布！！！");
         task.setIsSuccess(0);
-        taskService.save(task);
+        taskService.saveOrUpdate(task);
         return task.getId();
     }
+
+    @Override
+    public void bypassDeploy(Long taskId, String reason) {
+        //记录任务失败原因
+        taskService.recordTaskFail(taskId,reason);
+        //恢复流量
+        try {
+            resumeStableFlow();
+        } catch (ApiException e) {
+            throw new BusinessException(ErrorCode.RESUME_FLOW_ERR);
+        }
+    }
+
+
+    @Override
+    public void stopTask(Long taskId, String reason) {
+        //记录任务失败原因
+        taskService.recordTaskFail(taskId,reason);
+        //停止点火测试
+        executionStatus.put(taskId,false);
+    }
+
+
 }
 

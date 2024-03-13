@@ -5,6 +5,9 @@ import com.iscas.autoCanary.model.dto.ImageQuery;
 import com.iscas.autoCanary.pojo.Image;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.iscas.autoCanary.pojo.User;
+import com.iscas.autoCanary.pojo.output.ServiceInfoDTO;
+import com.sun.org.apache.xpath.internal.operations.Bool;
+import io.kubernetes.client.openapi.ApiException;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -23,6 +26,8 @@ public interface ImageService extends IService<Image> {
      */
     Integer synchronizeImage(HttpServletRequest request, String namespace);
 
+    //  查询线上运行服务的镜像版本列表
+    List<ServiceInfoDTO> getServingImgs() throws ApiException;
 
     //    镜像查询
     List<Image> listImages(ImageQuery imageQuery);
@@ -43,4 +48,7 @@ public interface ImageService extends IService<Image> {
     String getImageType(long id);
 
 
+    List<ServiceInfoDTO> getUnusedImages() throws ApiException;
+
+    void delImages(List<Long> imageList);
 }

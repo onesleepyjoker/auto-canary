@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.iscas.autoCanary.model.dto.TaskDto;
 import com.iscas.autoCanary.pojo.Task;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.iscas.autoCanary.pojo.output.LogInfoDTO;
 
 /**
 * @author 86158
@@ -13,6 +14,15 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface TaskService extends IService<Task> {
 
+    /**
+     * 根据TaskId更新任务失败原因
+     */
+    void recordTaskFail(Long taskId,String reason);
+
+    /**
+     * 获取Task任务日志
+     */
+    LogInfoDTO getLog(Long taskId);
 
     IPage getTaskAndUsername(int pageNum, int pageSize);
 }
