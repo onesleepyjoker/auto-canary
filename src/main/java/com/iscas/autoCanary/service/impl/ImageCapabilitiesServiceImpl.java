@@ -13,6 +13,7 @@ import com.iscas.autoCanary.pojo.output.ImageOutput;
 import com.iscas.autoCanary.pojo.output.MarkLineOutput;
 import com.iscas.autoCanary.service.ImageCapabilitiesService;
 import com.iscas.autoCanary.mapper.ImagecapabilitiesMapper;
+import io.kubernetes.client.openapi.ApiException;
 import org.springframework.boot.json.GsonJsonParser;
 import org.springframework.stereotype.Service;
 
@@ -163,6 +164,11 @@ public class ImageCapabilitiesServiceImpl extends ServiceImpl<ImagecapabilitiesM
             res.add(markLineOutput);
         }
         return res;
+    }
+
+    @Override
+    public List<ImageOutput> getIncompatibleVersion(Long imageId) throws ApiException {
+        return null;
     }
 }
 
