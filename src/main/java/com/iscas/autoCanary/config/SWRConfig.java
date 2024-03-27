@@ -30,10 +30,10 @@ public class SWRConfig {
 //    @Value("${HUAWEICLOUD_SDK_SK}")
 //    String sk;
 
-    String NAMESPACE="default";
+    public static final String NAMESPACE="isrc-test-develop-shanghai";
 
     //指定镜像仓库的资源区域
-    private final String REGION = "cn-north-4";
+    private static final String REGION = "cn-east-3";
 
 //    @Bean
 //    public SwrClient swrClient() {

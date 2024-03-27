@@ -40,11 +40,12 @@ create table image
     version varchar(256) default 1 not null comment '版本',
     namespace varchar(256) null comment '版本',
     imageStatus int default 0 not null comment '是否可用',
-    imageUrl varchar(256) null comment '镜像地址',
+    imageUrl varchar(256) null comment '镜像的地址',
     createTime datetime default CURRENT_TIMESTAMP null comment '创建时间',
     updateTime datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
     isDelete tinyint default 0 not null comment '是否删除',
-    userId int default 0 not null comment '创建镜像的用户id'
+    userId int default 0 not null comment '创建镜像的用户id',
+    commitId varchar(256) null comment '版本号（gitId），在CI阶段写入'
 ) comment '镜像表';
 
 create table imageCapabilities
@@ -74,5 +75,6 @@ create table task
     createTime datetime default CURRENT_TIMESTAMP null comment '创建时间',
     updateTime datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
     isDelete tinyint default 0 not null comment '是否删除',
-    userId int default 0 not null comment '创建镜像关系的用户id'
+    userId int default 0 not null comment '创建镜像关系的用户id',
+    reason varchar(255) null comment '任务执行失败原因'
 ) comment '任务表';

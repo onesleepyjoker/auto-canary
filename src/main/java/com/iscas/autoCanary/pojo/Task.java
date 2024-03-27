@@ -1,22 +1,16 @@
 package com.iscas.autoCanary.pojo;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Date;
-import lombok.Data;
-import org.apache.ibatis.annotations.Delete;
 
-/**
- * 任务表
- * @TableName task
- */
-@TableName(value ="task")
+@TableName(value = "task")
 @Data
 public class Task implements Serializable {
-    /**
-     * id
-     */
     @TableId(type = IdType.AUTO)
     private Long id;
 
@@ -26,41 +20,48 @@ public class Task implements Serializable {
     private String description;
 
     /**
-     * 是否成功
+     * 是否成功，0代表成功，1代表失败
      */
     private Integer isSuccess;
 
     /**
-     * 日志信息
+     * 任务运行日志
      */
     private String logInformation;
 
     /**
+<<<<<<< HEAD
      * 镜像版本数据
+=======
+     * 任务镜像列表
+>>>>>>> origin/master
      */
     private String imageList;
 
     /**
-     * 创建时间
+     * 创建任务时间
      */
     private Date createTime;
 
     /**
-     * 修改时间
+     *
      */
     private Date updateTime;
 
     /**
-     * 是否删除
+     * 逻辑删除
      */
-    @TableLogic
     private Integer isDelete;
 
     /**
-     * 创建镜像关系的用户id
+     * 用户Id
      */
-    private long userId;
+    private Long userId;
 
-    @TableField(exist = false)
-    private static final long serialVersionUID = 1L;
+    /**
+     * 任务失败原因
+     */
+    private String reason;
+
+
 }

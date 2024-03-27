@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 /**
@@ -14,6 +15,7 @@ import lombok.Data;
  */
 @TableName(value ="image")
 @Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Image implements Serializable {
     /**
      * id
@@ -24,6 +26,7 @@ public class Image implements Serializable {
     /**
      * 镜像名称
      */
+    @TableField("imageName")
     private String imageName;
 
     /**
@@ -49,6 +52,7 @@ public class Image implements Serializable {
     /**
      * 创建时间
      */
+    @TableField("createTime")
     private Date createTime;
 
     /**
@@ -71,6 +75,11 @@ public class Image implements Serializable {
      * 创建镜像的用户id
      */
     private Long userId;
+
+    /**
+     * 版本号（git一次commit的ID）
+     */
+    private String commitId;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
